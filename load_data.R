@@ -23,3 +23,14 @@ ggplot(good_customer, aes(x = bad_client_target)) + geom_bar(fill = c("dodgerblu
         legend.title =  element_text(size = 18)) + 
   theme_bw()
 dev.off()
+
+grade_prediction <- readARFF("grade_prediction")
+
+jpeg("gpbarplot.jpg", units = "in", width = 14, height = 8, res = 600)
+ggplot(grade_prediction, aes(x = pass)) + geom_bar(fill = c("dodgerblue4", "chocolate3")) + 
+  ggtitle("Classes for Grade Prediction Dataset") +
+  theme(plot.title = element_text(size = 21), axis.text = element_text(size = 16), 
+        axis.title = element_text(size = 18), legend.text = element_text(size = 16), 
+        legend.title =  element_text(size = 18)) + 
+  theme_bw()
+dev.off()
