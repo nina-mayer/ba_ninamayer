@@ -172,4 +172,14 @@ plots10000 <- ggarrange(plot31, plot32, plot33, plot34, ncol = 2, nrow = 2)
 plots10000 <- annotate_figure(plots10000, top = text_grob("Data sets with size 10000", face = "bold", size = 14))
 
 # export
-ggexport(plotlist = plots100, filename = "plots100.png", nrow = 2, ncol = 2)
+jpeg("plots100.jpg", units = "in", width = 14, height = 8, res = 600)
+plots100
+dev.off()
+
+jpeg("plots1000.jpg", units = "in", width = 14, height = 8, res = 600)
+plots1000
+dev.off()
+
+jpeg("plots10000.jpg", units = "in", width = 14, height = 8, res = 600)
+plots10000
+dev.off()
