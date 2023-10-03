@@ -1,4 +1,11 @@
 library(ggplot2)
+library(ggpubr)
+library(mlr3)
+library(mlr3learners)
+library(mlr3viz)
+library(mlr3measures)
+
+#tests
 
 x1 <- c(rnorm(500, 0,1), rnorm(500,3,1))
 x2 <- rnorm(1000)
@@ -33,6 +40,22 @@ ggplot(sim_3, mapping = aes(x = x5, y = x7, color = class3)) + geom_point()
 
 
 
+
+### sim_imbalanced_data
+###
+### This method creates synthetic binary classification data, that is imbalanced 
+### to a degree that can be manually set. The covariates follow the normal distribution 
+### with two means and have a standard deviation of 1.
+### Input:
+###   n             An integer. The size of the data set
+###   n_variables   An integer. The number of dependent covariates
+###   imb_ratio     An integer. The imbalance ratio (the majority class is imb_ratio
+###                 times bigger than the minority class)
+###   mean_diff     An integer. The difference of the means in the covariates.
+### Output:
+###   A dataframe with n rows and n_variables + 1 columns. The column "class" 
+###   serves as the target variable and has two outcomes (1,2).
+
 sim_imbalanced_data <- function(n, n_variables, imb_ratio, mean_diff) {
   n_minor <- n/(imb_ratio + 1)
   n_major <- n - n_minor
@@ -45,5 +68,108 @@ sim_imbalanced_data <- function(n, n_variables, imb_ratio, mean_diff) {
   data
 }
 
-data1 <- sim_imbalanced_data(1000, 3, 9, 2)
-ggplot(data1, mapping = aes(x = V2, y = V3, color = class)) + geom_point()
+
+### create sythetic data
+## size = 100
+# imbalance ratio: 1:1
+data11 <- sim_imbalanced_data(100, 3, 1, 2)
+plot11 <- ggplot(data11, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:1") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:2
+data12 <- sim_imbalanced_data(100, 3, 2, 2)
+plot12 <- ggplot(data12, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:2") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:4
+data13 <- sim_imbalanced_data(100, 3, 4, 2)
+plot13 <- ggplot(data13, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:3") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:9
+data14 <- sim_imbalanced_data(100, 3, 9, 2)
+plot14 <- ggplot(data14, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:4") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+
+## size = 1000
+# imbalance ratio: 1:1
+data21 <- sim_imbalanced_data(1000, 3, 1, 2)
+plot21 <- ggplot(data21, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:1") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:4
+data22 <- sim_imbalanced_data(1000, 3, 4, 2)
+plot22 <- ggplot(data22, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:4") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:9
+data23 <- sim_imbalanced_data(1000, 3, 9, 2)
+plot23 <- ggplot(data23, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:9") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:19
+data24 <- sim_imbalanced_data(1000, 3, 19, 2)
+plot24 <- ggplot(data24, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point() + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:19") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+
+## size = 10000
+# imbalance ratio: 1:1
+data31 <- sim_imbalanced_data(10000, 3, 1, 2)
+plot31 <- ggplot(data31, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point(alpha = 0.8, stroke = NA) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:1") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:9
+data32 <- sim_imbalanced_data(10000, 3, 9, 2)
+plot32 <- ggplot(data32, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point(alpha = 0.8, stroke = NA) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:9") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:19
+data33 <- sim_imbalanced_data(10000, 3, 19, 2)
+plot33 <- ggplot(data33, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point(alpha = 0.8, stroke = NA) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:19") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+# imbalance ratio: 1:99
+data34 <- sim_imbalanced_data(10000, 3, 99, 2)
+plot34 <- ggplot(data34, mapping = aes(x = V2, y = V3, color = class)) + 
+  geom_point(alpha = 0.8, stroke = NA) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:99") + xlab("Variable 1") + ylab("Variable 2") + 
+  theme_bw()
+
+
+## visualize synthetic data
+# size = 100
+plots100 <- ggarrange(plot11, plot12, plot13, plot14, ncol = 2, nrow = 2)
+plots100 <- annotate_figure(plots100, top = text_grob("Data sets with size 100", face = "bold", size = 14))
+# size = 1000
+plots1000 <- ggarrange(plot21, plot22, plot23, plot24, ncol = 2, nrow = 2)
+plots1000 <- annotate_figure(plots1000, top = text_grob("Data sets with size 1000", face = "bold", size = 14))
+# size = 10000
+plots10000 <- ggarrange(plot31, plot32, plot33, plot34, ncol = 2, nrow = 2)
+plots10000 <- annotate_figure(plots10000, top = text_grob("Data sets with size 10000", face = "bold", size = 14))
+
+# export
+ggexport(plotlist = plots100, filename = "plots100.png", nrow = 2, ncol = 2)
