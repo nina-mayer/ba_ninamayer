@@ -4,6 +4,7 @@ library(mlr3)
 library(mlr3learners)
 library(mlr3viz)
 library(mlr3measures)
+library(MASS)
 
 #tests
 
@@ -183,3 +184,41 @@ dev.off()
 jpeg("plots10000.jpg", units = "in", width = 14, height = 8, res = 600)
 plots10000
 dev.off()
+
+
+### MASS
+
+#variances
+variances <- c(4, 1, 5, 1, 1.5, 2, 5, 2, 7)
+cov_matrix <- matrix(data = variances, nrow = 3, ncol = 3, byrow = TRUE)
+rownames(cov_matrix) <- c("X1", "X2", "X3")
+colnames(cov_matrix) <- c("X1", "X2", "X3")
+cov_matrix
+
+#class1
+n1 <- 20
+means1 <- c(27, 12, 56)
+sim_data1 <- mvrnorm(n = n1, mu = means1, Sigma = cov_matrix)
+class1 <- rep(x = 1, times = 20)
+cl_1 <- data.frame(class1, sim_data1)
+colnames(cl_1) <- c("class", "X1", "X2", "X3")
+
+#class2
+n2 <- 80
+means2 <- c(31, 10, 53)
+sim_data2 <- mvrnorm(n = n2, mu = means2, Sigma = cov_matrix)
+class2 <- rep(x = 2, times = 80)
+cl_2 <- data.frame(class2, sim_data2)
+colnames(cl_2) <- c("class", "X1", "X2", "X3")
+
+
+data <- rbind(cl_1, cl_2)
+data$class <- as.factor(data$class)
+ggplot(data, mapping = aes(x = X2, y = X3, color = class, shape = class)) + 
+  geom_point(size = 2) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:4") + xlab("x2") + ylab("x3") + 
+  theme_bw()
+
+data$class <- as.numeric(data$class)
+lin_mod <- lm(class ~ M1 + M2 + M3 + M1*M2 + M2*M3 + M1*M3, data = data)
+summary(lin_mod)
