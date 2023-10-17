@@ -54,5 +54,6 @@ ggplot(knn, mapping = aes(x = x, y = y, color = class, shape = class)) +
   geom_point(size = 5) + scale_color_manual(values = c("orangered3", "steelblue4", "green")) + 
   ggtitle("k-Nearest-Neighbors") + xlab("") + ylab("") + coord_fixed(ratio = 1) +
   geom_circle(aes(x0 = 5, y0 = 5, r = 1.4142135), inherit.aes = FALSE) + 
-  geom_circle(aes(x0 = 5, y0 = 5, r = 1), inherit.aes = FALSE)+ theme_bw() 
+  geom_circle(aes(x0 = 5, y0 = 5, r = 1), inherit.aes = FALSE) + 
+  theme_bw() + theme(legend.position = "none")
 dev.off()
