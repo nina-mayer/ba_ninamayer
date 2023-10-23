@@ -222,3 +222,42 @@ ggplot(data, mapping = aes(x = X2, y = X3, color = class, shape = class)) +
 data$class <- as.numeric(data$class)
 lin_mod <- lm(class ~ M1 + M2 + M3 + M1*M2 + M2*M3 + M1*M3, data = data)
 summary(lin_mod)
+
+
+
+
+### simulate-function
+###
+### creates data with three features and given means and covariances
+means1 <- c(27, 12, 56)
+means2 <- c(29, 10, 54)
+variances <- c(4, 1, 5, 1, 1.5, 2, 5, 2, 7)
+cov_matrix <- matrix(data = variances, nrow = 3, ncol = 3, byrow = TRUE)
+rownames(cov_matrix) <- c("X1", "X2", "X3")
+colnames(cov_matrix) <- c("X1", "X2", "X3")
+
+simulate <- function(n, imb){
+  n1 <- (1/(imb+1)) * n
+  n2 <- n - n1
+  
+  sim_data1 <- mvrnorm(n = n1, mu = means1, Sigma = cov_matrix)
+  class1 <- rep(x = 1, times = n1)
+  cl_1 <- data.frame(class1, sim_data1)
+  colnames(cl_1) <- c("class", "X1", "X2", "X3")
+  
+  sim_data2 <- mvrnorm(n = n2, mu = means2, Sigma = cov_matrix)
+  class2 <- rep(x = 0, times = n2)
+  cl_2 <- data.frame(class2, sim_data2)
+  colnames(cl_2) <- c("class", "X1", "X2", "X3")
+  
+  data <- rbind(cl_1, cl_2)
+  data$class <- as.factor(data$class)
+  data
+}
+
+data1 <- simulate(1000,1)
+data2 <- simulate(1000,4)
+data3 <- simulate(1000,9)
+data4 <- simulate(1000,19)
+data5 <- simulate(1000,99)
+ 
