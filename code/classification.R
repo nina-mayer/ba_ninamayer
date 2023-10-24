@@ -299,7 +299,9 @@ d5_knn_rr$prediction()$confusion
 
 
 classify <- function(data) {
-  values <- data.frame(rep(0, times = 12), nrow = 3)
+  values <- data.frame(matrix(rep(0, times = 12), ncol = 4, nrow = 3))
+  colnames(values) <- c("logreg", "qda", "cart", "knn")
+  rownames(values) <- c("bACC", "fbeta", "recall")
   output <- list(values)
   cv5 = rsmp("cv", folds = 5)
   
@@ -307,50 +309,52 @@ classify <- function(data) {
   
   ##logistic regression
   logreg <- lrn("classif.glmnet")
-  logreg$train(task)
   #resampling
-  logreg_rr <- resample(d5_task, d5_logreg, cv5)
-  output$values[1,1] <- logreg_rr$aggregate(msr("classif.bacc"))
-  output$values[2,1] <- logreg_rr$aggregate(msr("classif.fbeta"))
-  output$values[3,1] <- logreg_rr$aggregate(msr("classif.recall"))
-  output <- append(output,logreg_rr$prediction()$confusion)
+  logreg_rr <- resample(task, logreg, cv5)
+  output[[1]][1,1] <- logreg_rr$aggregate(msr("classif.bacc"))
+  output[[1]][2,1] <- logreg_rr$aggregate(msr("classif.fbeta"))
+  output[[1]][3,1] <- logreg_rr$aggregate(msr("classif.recall"))
+  output[[2]] <- logreg_rr$prediction()$confusion
   
   
   ##qda
-  d5_qda <- lrn("classif.qda")
-  d5_qda$train(d5_task)
-  d5_qda$model
-  
+  qda <- lrn("classif.qda")
   #resampling
-  d5_qda_rr <- resample(d5_task, d5_qda, cv5)
-  d5_qda_rr$aggregate(msr("classif.bacc"))
-  d5_qda_rr$aggregate(msr("classif.fbeta"))
-  d5_qda_rr$aggregate(msr("classif.recall"))
-  d5_qda_rr$prediction()$confusion
+  qda_rr <- resample(task, qda, cv5)
+  output[[1]][1,2] <- qda_rr$aggregate(msr("classif.bacc"))
+  output[[1]][2,2] <- qda_rr$aggregate(msr("classif.fbeta"))
+  output[[1]][3,2] <- qda_rr$aggregate(msr("classif.recall"))
+  output[[3]] <- qda_rr$prediction()$confusion
   
   
   ##desicion tree
-  d5_cart <- lrn("classif.rpart")
-  d5_cart$train(d5_task)
-  d5_cart$model
-  
+  cart <- lrn("classif.rpart")
   #resampling
-  d5_cart_rr <- resample(d5_task, d5_cart, cv5)
-  d5_cart_rr$aggregate(msr("classif.bacc"))
-  d5_cart_rr$aggregate(msr("classif.fbeta"))
-  d5_cart_rr$aggregate(msr("classif.recall"))
-  d5_cart_rr$prediction()$confusion
+  cart_rr <- resample(task, cart, cv5)
+  output[[1]][1,3] <- cart_rr$aggregate(msr("classif.bacc"))
+  output[[1]][2,3] <- cart_rr$aggregate(msr("classif.fbeta"))
+  output[[1]][3,3] <- cart_rr$aggregate(msr("classif.recall"))
+  output[[4]] <- cart_rr$prediction()$confusion
   
   
   ##knn
-  d5_knn <- lrn("classif.kknn")
-  d5_knn$train(d5_task)
-  d5_knn$model
-  
+  knn <- lrn("classif.kknn")
   #resampling
-  d5_knn_rr <- resample(d5_task, d5_knn, cv5)
-  d5_knn_rr$aggregate(msr("classif.bacc"))
-  d5_knn_rr$aggregate(msr("classif.fbeta"))
-  d5_knn_rr$aggregate(msr("classif.recall"))
-  d5_knn_rr$prediction()$confusion
+  knn_rr <- resample(task, knn, cv5)
+  output[[1]][1,4] <- knn_rr$aggregate(msr("classif.bacc"))
+  output[[1]][2,4] <- knn_rr$aggregate(msr("classif.fbeta"))
+  output[[1]][3,4] <- knn_rr$aggregate(msr("classif.recall"))
+  output[[5]] <- knn_rr$prediction()$confusion
+  
+  output
 }
+
+
+task <- TaskClassif$new("data61", data61, "class", positive = "1")
+nb <- lrn("classif.naive_bayes")
+#resampling
+nb_rr <- resample(task, nb, cv5)
+nb_rr$aggregate(msr("classif.bacc"))
+nb_rr$aggregate(msr("classif.fbeta"))
+nb_rr$aggregate(msr("classif.recall"))
+nb_rr$prediction()$confusion

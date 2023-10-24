@@ -260,4 +260,10 @@ data2 <- simulate(1000,4)
 data3 <- simulate(1000,9)
 data4 <- simulate(1000,19)
 data5 <- simulate(1000,99)
- 
+
+data11 <- simulate(10000,1)
+data21 <- simulate(10000,4)
+data31 <- simulate(10000,9)
+data41 <- simulate(10000,19)
+data51 <- simulate(10000,99)
+data61 <- simulate(10000,199)
