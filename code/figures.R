@@ -2,12 +2,13 @@ library(ggplot2)
 library(ggpubr)
 library(ggforce)
 library(patchwork)
+library(smotefamily)
 
 ### imbalanced data set
 
 imbdata <- sim_imbalanced_data(500, 3, 9, 2)
 jpeg("imb_data.jpg", units = "in", width = 14, height = 8, res = 800)
-plot_imbdata <- ggplot(imbdata, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
+ggplot(imbdata, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
   geom_point(size = 3) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Imbalanced Data") + xlab("") + ylab("") + theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
@@ -72,4 +73,29 @@ ggplot(knn, mapping = aes(x = x, y = y, color = class, shape = class)) +
   geom_circle(aes(x0 = 5, y0 = 5, r = 1.4142135), inherit.aes = FALSE) + 
   geom_circle(aes(x0 = 5, y0 = 5, r = 1), inherit.aes = FALSE) + 
   theme_bw() + theme(legend.position = "none")
+dev.off()
+
+
+
+
+### SMOTE
+
+data_smote_before <- sim_imbalanced_data(500, 3, 9, 2)
+plot_data_before <- ggplot(data_smote_before, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
+  geom_point() + scale_color_manual(values = c("steelblue4", "orangered3")) + 
+  ggtitle("Data before SMOTE") + xlab("") + ylab("") + theme_bw() + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+list_smote <- SMOTE(data_smote_before[,2:4], data_smote_before[,1], 3)
+data_smote_after <- list_smote$data
+
+plot_data_smote <- ggplot(data_smote_after, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
+  geom_point() + scale_color_manual(values = c("steelblue4","orangered3")) + 
+  ggtitle("Data after SMOTE") + xlab("") + ylab("") + theme_bw() + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+      axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+jpeg("smote.jpg", units = "in", width = 14, height = 8, res = 800)
+ggarrange(plot_data_before, plot_data_smote, ncol = 2)
 dev.off()
