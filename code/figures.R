@@ -3,6 +3,20 @@ library(ggpubr)
 library(ggforce)
 library(patchwork)
 
+### imbalanced data set
+
+imbdata <- sim_imbalanced_data(500, 3, 9, 2)
+jpeg("imb_data.jpg", units = "in", width = 14, height = 8, res = 800)
+plot_imbdata <- ggplot(imbdata, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
+  geom_point(size = 3) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
+  ggtitle("Imbalanced Data") + xlab("") + ylab("") + theme_bw() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank())
+dev.off()
+
+
+
+
 ### undersampling vs oversampling
 
 #imbalanced dataset
@@ -34,6 +48,8 @@ bottom_row <- ggarrange(plot_underdata, plot_overdata, ncol = 2)
 jpeg("underoversampling.jpg", units = "in", width = 14, height = 8, res = 800)
 ggarrange(top_row, bottom_row, ncol = 1)
 dev.off()
+
+
 
 
 

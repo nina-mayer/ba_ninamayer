@@ -60,7 +60,7 @@ ggplot(sim_3, mapping = aes(x = x5, y = x7, color = class3)) + geom_point()
 sim_imbalanced_data <- function(n, n_variables, imb_ratio, mean_diff) {
   n_minor <- n/(imb_ratio + 1)
   n_major <- n - n_minor
-  data <- data.frame(class = factor(c(rep(1, n_minor), rep(2, n_major))))
+  data <- data.frame(class = factor(c(rep(1, n_minor), rep(0, n_major))))
   mean_minor <- sample(-5:5, 1)
   mean_major <- mean_minor + mean_diff
   for(i in 1:n_variables) {
