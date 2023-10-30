@@ -92,10 +92,11 @@ data_smote_after <- list_smote$data
 
 plot_data_smote <- ggplot(data_smote_after, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
   geom_point() + scale_color_manual(values = c("steelblue4","orangered3")) + 
-  ggtitle("Data after SMOTE") + xlab("") + ylab("") + theme_bw() + 
+  ggtitle("Data after SMOTE with k = 3") + xlab("") + ylab("") + theme_bw() + 
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
       axis.text.y = element_blank(), axis.ticks.y = element_blank())
 
+
 jpeg("smote.jpg", units = "in", width = 14, height = 8, res = 800)
-ggarrange(plot_data_before, plot_data_smote, ncol = 2)
+ggarrange(plot_data_before, plot_data_smote, ncol = 3)
 dev.off()
