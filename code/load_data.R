@@ -2,6 +2,8 @@ library(OpenML)
 library(farff)
 library(ggplot2)
 
+### thoraric surgery data set
+
 ts_list <- getOMLDataSet(data.id = 4329L)
 thoracic_surgery <- ts_list$data
 
@@ -17,6 +19,8 @@ ggplot(thoracic_surgery, aes(x = Risk1Yr)) + geom_bar(fill = c("coral4", "palegr
 
 table(thoracic_surgery$Risk1Yr)
 
+
+### fraud detection data set
 
 fd_list <- getOMLDataSet(data.id = 42175L)
 fraud_detection <- fd_list$data

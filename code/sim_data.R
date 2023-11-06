@@ -229,6 +229,14 @@ summary(lin_mod)
 ### simulate-function
 ###
 ### creates data with three features and given means and covariances
+### Input:
+###   n     An integer. The size of the data set that needs to be simulated
+###   imb   An integer. The imbalance ratio in the data set
+### Output:
+###   A dataframe with n rows and four columns. Three numerical features X and
+###     one binary target variable class with values 0 and 1 and class imbalance
+###     1:imb
+
 means1 <- c(27, 12, 56)
 means2 <- c(29, 10, 54)
 variances <- c(4, 1, 5, 1, 1.5, 2, 5, 2, 7)
