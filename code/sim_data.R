@@ -263,15 +263,10 @@ simulate <- function(n, imb){
   data
 }
 
-data1 <- simulate(1000,1)
-data2 <- simulate(1000,4)
-data3 <- simulate(1000,9)
-data4 <- simulate(1000,19)
-data5 <- simulate(1000,99)
+set.seed(12226947)
 
-data11 <- simulate(10000,1)
-data21 <- simulate(10000,4)
-data31 <- simulate(10000,9)
-data41 <- simulate(10000,19)
-data51 <- simulate(10000,99)
-data61 <- simulate(10000,199)
+data4 <- simulate(10000,4)
+data9 <- simulate(10000,9)
+data19 <- simulate(10000,19)
+data99 <- simulate(10000,99)
+data199 <- simulate(10000,199)

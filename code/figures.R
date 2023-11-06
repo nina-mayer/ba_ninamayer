@@ -100,3 +100,16 @@ plot_data_smote <- ggplot(data_smote_after, mapping = aes(x = V2, y = V3, color 
 jpeg("smote.jpg", units = "in", width = 14, height = 8, res = 800)
 ggarrange(plot_data_before, plot_data_smote, ncol = 3)
 dev.off()
+
+
+
+
+### Synthetic Data
+
+syn_data_viz <- simulate(1000,9)
+jpeg("syn_data_viz.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(syn_data_viz, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
+  geom_point(size = 2) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  ggtitle("Imbalance Ratio: 1:9") + xlab("X1") + ylab("X2") + 
+  theme_bw()
+dev.off()

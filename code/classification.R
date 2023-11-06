@@ -7,6 +7,9 @@ library(smotefamily)
 library(tidyverse)
 library(e1071)
 
+set.seed(12226947)
+
+### NO RESAMPLING
 
 ### classify - function
 ###
@@ -71,6 +74,20 @@ classify <- function(data) {
   output
 }
 
+# classify data
+
+classify(data4)
+classify(data9)
+classify(data19)
+classify(data99)
+classify(data199)
+colnames(thoracic_surgery)[17] <- "class"
+classify(thoracic_surgery)
+colnames(fraud_detection)[31] <- "class"
+classify(fraud_detection)
+
+
+### SMOTE
 
 ### smote_cv - function
 ###
@@ -87,12 +104,12 @@ classify <- function(data) {
 
 smote_cv <- function(data, lrnr, perf) {
   #manual 5-fold CV
-  splits <- split(data, sample(rep(1:5, times = c(2000,2000,2000,2000,2000))))
-  results <- c(0,0,0,0,0)
+  splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
+  results <- rep(0, times = 5)
   for(i in 1:5){
     #define train and test for split
     train <- data.frame()
-    trainsets <- c(1,2,3,4,5)
+    trainsets <- 1:5
     trainsets <- trainsets[!trainsets %in% c(i)]
     for(j in 1:4){
       train <- rbind(train, splits[[j]])
@@ -113,6 +130,7 @@ smote_cv <- function(data, lrnr, perf) {
     prediction <- learner$predict_newdata(test)
     results[i] <- prediction$score(perf)
   }
+  #aggregate results
   mean(results)
 }
 
@@ -156,4 +174,8 @@ classify_smote <- function(data) {
   output
 }
 
-classify_smote(data61)
+classify_smote(data4)
+classify_smote(data9)
+classify_smote(data19)
+classify_smote(data99)
+classify_smote(data199)
