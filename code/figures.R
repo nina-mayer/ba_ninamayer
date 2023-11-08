@@ -23,21 +23,21 @@ dev.off()
 #imbalanced dataset
 imbdata <- sim_imbalanced_data(500, 3, 9, 2)
 plot_imbdata <- ggplot(imbdata, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
-  geom_point(size = 2) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Imbalanced Data") + xlab("") + ylab("") + theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank())
 #undersampling
 underdata <- sim_imbalanced_data(100, 3, 1, 2)
 plot_underdata <- ggplot(underdata, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
-  geom_point(size = 2) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Undersampling") + xlab("") + ylab("") + theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank())
 #oversampling
 overdata <- sim_imbalanced_data(900, 3, 1, 2)
 plot_overdata <- ggplot(overdata, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
-  geom_point(size = 2) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Oversampling") + xlab("") + ylab("") + theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank())
@@ -81,24 +81,23 @@ dev.off()
 ### SMOTE
 
 data_smote_before <- sim_imbalanced_data(500, 3, 9, 2)
-plot_data_before <- ggplot(data_smote_before, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
-  geom_point() + scale_color_manual(values = c("steelblue4", "orangered3")) + 
+plot_data_before <- ggplot(data_smote_before, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Data before SMOTE") + xlab("") + ylab("") + theme_bw() + 
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank())
 
-list_smote <- SMOTE(data_smote_before[,2:4], data_smote_before[,1], 3)
-data_smote_after <- list_smote$data
+data_smote_after <- SMOTE(data_smote_before, k = 3)
 
-plot_data_smote <- ggplot(data_smote_after, mapping = aes(x = V2, y = V3, color = class, shape = class)) + 
-  geom_point() + scale_color_manual(values = c("steelblue4","orangered3")) + 
+plot_data_smote <- ggplot(data_smote_after, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4","orangered3")) + 
   ggtitle("Data after SMOTE with k = 3") + xlab("") + ylab("") + theme_bw() + 
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
       axis.text.y = element_blank(), axis.ticks.y = element_blank())
 
 
 jpeg("smote.jpg", units = "in", width = 14, height = 8, res = 800)
-ggarrange(plot_data_before, plot_data_smote, ncol = 3)
+ggarrange(plot_data_before, plot_data_smote, ncol = 2)
 dev.off()
 
 
@@ -109,7 +108,7 @@ dev.off()
 syn_data_viz <- simulate(1000,9)
 jpeg("syn_data_viz.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(syn_data_viz, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
-  geom_point(size = 2) + scale_color_manual(values = c("orangered3", "steelblue4")) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Imbalance Ratio: 1:9") + xlab("X1") + ylab("X2") + 
   theme_bw()
 dev.off()
