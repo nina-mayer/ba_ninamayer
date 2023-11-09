@@ -1,7 +1,6 @@
 library(mlr3)
 library(mlr3learners)
 library(mlr3measures)
-library(smotefamily)
 library(tidyverse)
 library(e1071)
 library(bimba)
@@ -206,3 +205,7 @@ classify_resampling(data9, RUS)
 classify_resampling(data19, RUS)
 classify_resampling(data99, RUS)
 classify_resampling(data199, RUS)
+
+###NCL
+
+classify_resampling(data199, SLSMOTE)
