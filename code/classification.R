@@ -206,6 +206,86 @@ classify_resampling(data19, RUS)
 classify_resampling(data99, RUS)
 classify_resampling(data199, RUS)
 
-###NCL
 
-classify_resampling(data199, SLSMOTE)
+
+
+### HYBRID
+
+hyb_resampling_cv <- function(data, lrnr, perf, oversample, undersample) {
+  #manual 5-fold CV
+  splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
+  results <- rep(0, times = 5)
+  for(i in 1:5){
+    #define train and test for split
+    train <- data.frame()
+    trainsets <- 1:5
+    trainsets <- trainsets[!trainsets %in% c(i)]
+    for(j in 1:4){
+      train <- rbind(train, splits[[j]])
+    }
+    test <- splits[[i]]
+    
+    #apply smote to training data
+    train <- oversample(train, 50)
+    train <- undersample(train, 33.33)
+    
+    #learn model with new training data
+    task <- TaskClassif$new("train", train, "class", positive = "1")
+    learner <- lrnr
+    learner$train(task)
+    
+    #predict test data with learner
+    prediction <- learner$predict_newdata(test)
+    results[i] <- prediction$score(perf)
+  }
+  #aggregate results
+  mean(results)
+}
+
+
+### classify_resampling - function
+###
+### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
+### performance with 5-fold cv and 3 performance metrics while resampling the data
+### Input:
+###   data    A dataframe. The data to be classified
+###   resample  A "bimba"-method. The resampling method
+### Output:
+###   A dataframe with the performance scores for each learner
+
+hyb_classify_resampling <- function(data, oversample, undersample) {
+  #define output dataframe
+  output <- data.frame(matrix(rep(0, times = 12), ncol = 4, nrow = 3))
+  colnames(output) <- c("logreg", "nb", "rf", "knn")
+  rownames(output) <- c("bACC", "f1", "recall") 
+  
+  #logreg
+  output[1,1] <- hyb_resampling_cv(data, lrn("classif.glmnet"), msr("classif.bacc"), oversample, undersample)
+  output[2,1] <- hyb_resampling_cv(data, lrn("classif.glmnet"), msr("classif.fbeta"), oversample, undersample)
+  output[3,1] <- hyb_resampling_cv(data, lrn("classif.glmnet"), msr("classif.recall"), oversample, undersample)
+  
+  #naive bayes
+  output[1,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.bacc"), oversample, undersample)
+  output[2,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.fbeta"), oversample, undersample)
+  output[3,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.recall"), oversample, undersample)
+  
+  #rf
+  output[1,3] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), oversample, undersample)
+  output[2,3] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), oversample, undersample)
+  output[3,3] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), oversample, undersample)
+  
+  #knn
+  output[1,4] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), oversample, undersample)
+  output[2,4] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), oversample, undersample)
+  output[3,4] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), oversample, undersample)
+  
+  output
+}
+
+### SMOTE + SBC
+
+hyb_classify_resampling(data4, SMOTE, SBC)
+hyb_classify_resampling(data9, SMOTE, SBC)
+hyb_classify_resampling(data19, SMOTE, SBC)
+hyb_classify_resampling(data99, SMOTE, SBC)
+hyb_classify_resampling(data199, SMOTE, SBC)
