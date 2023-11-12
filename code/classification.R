@@ -289,3 +289,12 @@ hyb_classify_resampling(data9, SMOTE, SBC)
 hyb_classify_resampling(data19, SMOTE, SBC)
 hyb_classify_resampling(data99, SMOTE, SBC)
 hyb_classify_resampling(data199, SMOTE, SBC)
+
+### SMOTE + RUS
+
+hyb_classify_resampling(data4, SMOTE, RUS)
+hyb_classify_resampling(data9, SMOTE, RUS)
+hyb_classify_resampling(data19, SMOTE, RUS)
+hyb_classify_resampling(data99, SMOTE, RUS)
+hyb_classify_resampling(data199, SMOTE, RUS)
+
