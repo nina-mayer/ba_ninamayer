@@ -17,6 +17,7 @@ set.seed(12226947)
 ### with 5-fold crossvalidation and 3 performance metrics
 ### Input:
 ###   data  A dataframe. The data to be classified
+###   imb   A string. The data imbalance
 ### Output:
 ###   a list with length 5
 ###     [1] a dataframe with the performance values
@@ -133,6 +134,7 @@ resampling_cv <- function(data, lrnr, perf, resample) {
 ### Input:
 ###   data    A dataframe. The data to be classified
 ###   resample  A "bimba"-method. The resampling method
+###   imb   A string. The data imbalance
 ### Output:
 ###   A dataframe with the performance scores for each learner
 
@@ -225,7 +227,25 @@ comp1[,3] <- c(raw[4,2], raw[13,2], raw[22,2], raw[31,2], raw[40,2],
 comp1$imbalance <- factor(comp1$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS", "SBC", "RUS"))
 
+
+
+
+
 ### HYBRID
+
+### hyb_resampling_cv - function
+###
+### classifies data with 5 fold cv while applying the resampling method to the 
+### training data in each fold. The classifying learner and the performance measure 
+### is to be specified
+### Input:
+###   data      A dataframe. The data to be classified
+###   lrnr      An object of mlr3-class Learner. The learner to be trained
+###   perf      An object of mlr3-class Measure. The measure of the performance evaluation.
+###   oversample  A "bimba"-method. The oversampling method
+###   undersample  A "bimba"-method. The undersampling method
+### Output:
+###   A numeric. The aggregated performance measure
 
 hyb_resampling_cv <- function(data, lrnr, perf, oversample, undersample) {
   #manual 5-fold CV
@@ -259,26 +279,27 @@ hyb_resampling_cv <- function(data, lrnr, perf, oversample, undersample) {
 }
 
 
-### classify_resampling - function
+### hyb_classify_resampling - function
 ###
 ### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
 ### performance with 5-fold cv and 3 performance metrics while resampling the data
+### with one oversampling and one undersampling method
 ### Input:
 ###   data    A dataframe. The data to be classified
-###   resample  A "bimba"-method. The resampling method
+###   oversample  A "bimba"-method. The oversampling method
+###   undersample  A "bimba"-method. The undersampling method
+###   imb   A string. The data imbalance
 ### Output:
 ###   A dataframe with the performance scores for each learner
 
-hyb_classify_resampling <- function(data, oversample, undersample) {
+hyb_classify_resampling <- function(data, oversample, undersample, imb) {
   #define output dataframe
-  output <- data.frame(matrix(rep(0, times = 12), ncol = 4, nrow = 3))
-  colnames(output) <- c("logreg", "nb", "rf", "knn")
-  rownames(output) <- c("bACC", "f1", "recall") 
+  output <- data.frame(matrix(rep(0, times = 36), ncol = 4, nrow = 9))
+  colnames(output) <- c("classifier", "value", "imbalance", "performance")
+  output[,1] <- c(rep("NB", times = 3), rep("RF", times = 3), rep("kNN", times = 3))
+  output[,3] <- rep(imb, times = 9)
+  output[,4] <- rep(c("bACC", "F1", "Recall"), times = 3) 
   
-  #logreg
-  output[1,1] <- hyb_resampling_cv(data, lrn("classif.glmnet"), msr("classif.bacc"), oversample, undersample)
-  output[2,1] <- hyb_resampling_cv(data, lrn("classif.glmnet"), msr("classif.fbeta"), oversample, undersample)
-  output[3,1] <- hyb_resampling_cv(data, lrn("classif.glmnet"), msr("classif.recall"), oversample, undersample)
   
   #naive bayes
   output[1,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.bacc"), oversample, undersample)
@@ -286,31 +307,37 @@ hyb_classify_resampling <- function(data, oversample, undersample) {
   output[3,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.recall"), oversample, undersample)
   
   #rf
-  output[1,3] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), oversample, undersample)
-  output[2,3] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), oversample, undersample)
-  output[3,3] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), oversample, undersample)
+  output[4,2] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), oversample, undersample)
+  output[5,2] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), oversample, undersample)
+  output[6,2] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), oversample, undersample)
   
   #knn
-  output[1,4] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), oversample, undersample)
-  output[2,4] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), oversample, undersample)
-  output[3,4] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), oversample, undersample)
+  output[7,2] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), oversample, undersample)
+  output[8,2] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), oversample, undersample)
+  output[9,2] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), oversample, undersample)
   
   output
 }
 
 ### SMOTE + SBC
 
-hyb_classify_resampling(data4, SMOTE, SBC)
-hyb_classify_resampling(data9, SMOTE, SBC)
-hyb_classify_resampling(data19, SMOTE, SBC)
-hyb_classify_resampling(data99, SMOTE, SBC)
-hyb_classify_resampling(data199, SMOTE, SBC)
+smotesbc4 <- hyb_classify_resampling(data4, SMOTE, SBC, "1:4")
+smotesbc9 <- hyb_classify_resampling(data9, SMOTE, SBC, "1:9")
+smotesbc19 <- hyb_classify_resampling(data19, SMOTE, SBC, "1:19")
+smotesbc99 <- hyb_classify_resampling(data99, SMOTE, SBC, "1:99")
+smotesbc199 <- hyb_classify_resampling(data199, SMOTE, SBC, "1:199")
+
+smotesbc <- rbind(smotesbc4, smotesbc9, smotesbc19, smotesbc99, smotesbc199)
+smotesbc$imbalance <- factor(smotesbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 ### SMOTE + RUS
 
-hyb_classify_resampling(data4, SMOTE, RUS)
-hyb_classify_resampling(data9, SMOTE, RUS)
-hyb_classify_resampling(data19, SMOTE, RUS)
-hyb_classify_resampling(data99, SMOTE, RUS)
-hyb_classify_resampling(data199, SMOTE, RUS)
+smoterus4 <- hyb_classify_resampling(data4, SMOTE, RUS, "1:4")
+smoterus9 <- hyb_classify_resampling(data9, SMOTE, RUS, "1:9")
+smoterus19 <- hyb_classify_resampling(data19, SMOTE, RUS, "1:19")
+smoterus99 <- hyb_classify_resampling(data99, SMOTE, RUS, "1:99")
+smoterus199 <- hyb_classify_resampling(data199, SMOTE, RUS, "1:199")
+
+smoterus <- rbind(smoterus4, smoterus9, smoterus19, smoterus99, smoterus199)
+smoterus$imbalance <- factor(smoterus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
