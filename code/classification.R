@@ -23,67 +23,59 @@ set.seed(12226947)
 ###     [2]-[5] confusion matrices
 
 
-classify <- function(data) {
-  values <- data.frame(matrix(rep(0, times = 12), ncol = 4, nrow = 3))
-  colnames(values) <- c("logreg", "nb", "rf", "knn")
-  rownames(values) <- c("bACC", "f1", "recall")
-  output <- list(values)
+classify <- function(data, imb) {
+  output <- data.frame(matrix(rep(0, times = 36), ncol = 4, nrow = 9))
+  colnames(output) <- c("classifier", "value", "imbalance", "performance")
+  output[,1] <- c(rep("NB", times = 3), rep("RF", times = 3), rep("kNN", times = 3))
+  output[,3] <- rep(imb, times = 9)
+  output[,4] <- rep(c("bACC", "F1", "Recall"), times = 3)
   cv5 = rsmp("cv", folds = 5)
   
   task <- TaskClassif$new("data", data, "class", positive = "1")
-  
-  ##logistic regression
-  logreg <- lrn("classif.glmnet")
-  #resampling
-  logreg_rr <- resample(task, logreg, cv5)
-  output[[1]][1,1] <- logreg_rr$aggregate(msr("classif.bacc"))
-  output[[1]][2,1] <- logreg_rr$aggregate(msr("classif.fbeta"))
-  output[[1]][3,1] <- logreg_rr$aggregate(msr("classif.recall"))
-  output[[2]] <- logreg_rr$prediction()$confusion
   
   
   ##nb
   nb <- lrn("classif.naive_bayes")
   #resampling
   nb_rr <- resample(task, nb, cv5)
-  output[[1]][1,2] <- nb_rr$aggregate(msr("classif.bacc"))
-  output[[1]][2,2] <- nb_rr$aggregate(msr("classif.fbeta"))
-  output[[1]][3,2] <- nb_rr$aggregate(msr("classif.recall"))
-  output[[3]] <- nb_rr$prediction()$confusion
+  output[1,2] <- nb_rr$aggregate(msr("classif.bacc"))
+  output[2,2] <- nb_rr$aggregate(msr("classif.fbeta"))
+  output[3,2] <- nb_rr$aggregate(msr("classif.recall"))
   
   
   ##random forest
   rf <- lrn("classif.ranger")
   #resampling
   rf_rr <- resample(task, rf, cv5)
-  output[[1]][1,3] <- rf_rr$aggregate(msr("classif.bacc"))
-  output[[1]][2,3] <- rf_rr$aggregate(msr("classif.fbeta"))
-  output[[1]][3,3] <- rf_rr$aggregate(msr("classif.recall"))
-  output[[4]] <- rf_rr$prediction()$confusion
+  output[4,2] <- rf_rr$aggregate(msr("classif.bacc"))
+  output[5,2] <- rf_rr$aggregate(msr("classif.fbeta"))
+  output[6,2] <- rf_rr$aggregate(msr("classif.recall"))
   
   
   ##knn
   knn <- lrn("classif.kknn")
   #resampling
   knn_rr <- resample(task, knn, cv5)
-  output[[1]][1,4] <- knn_rr$aggregate(msr("classif.bacc"))
-  output[[1]][2,4] <- knn_rr$aggregate(msr("classif.fbeta"))
-  output[[1]][3,4] <- knn_rr$aggregate(msr("classif.recall"))
-  output[[5]] <- knn_rr$prediction()$confusion
+  output[7,2] <- knn_rr$aggregate(msr("classif.bacc"))
+  output[8,2] <- knn_rr$aggregate(msr("classif.fbeta"))
+  output[9,2] <- knn_rr$aggregate(msr("classif.recall"))
   
   output
 }
 
 # classify data
 
-classify(data4)
-classify(data9)
-classify(data19)
-classify(data99)
-classify(data199)
-colnames(thoracic_surgery)[17] <- "class"
-classify(thoracic_surgery)
-colnames(fraud_detection)[31] <- "class"
+raw4 <- classify(data4, "1:4")
+raw9 <- classify(data9, "1:9")
+raw19 <- classify(data19, "1:19")
+raw99 <- classify(data99, "1:99")
+raw199 <- classify(data199, "1:199")
+
+raw <- rbind(raw4, raw9, raw19, raw99, raw199)
+raw$imbalance <- factor(raw$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
+
+classify(spectf_heart)
 classify(fraud_detection)
 
 
@@ -144,16 +136,13 @@ resampling_cv <- function(data, lrnr, perf, resample) {
 ### Output:
 ###   A dataframe with the performance scores for each learner
 
-classify_resampling <- function(data, resample) {
+classify_resampling <- function(data, resample, imb) {
   #define output dataframe
-  output <- data.frame(matrix(rep(0, times = 12), ncol = 4, nrow = 3))
-  colnames(output) <- c("logreg", "nb", "rf", "knn")
-  rownames(output) <- c("bACC", "f1", "recall") 
-  
-  #logreg
-  output[1,1] <- resampling_cv(data, lrn("classif.glmnet"), msr("classif.bacc"), resample)
-  output[2,1] <- resampling_cv(data, lrn("classif.glmnet"), msr("classif.fbeta"), resample)
-  output[3,1] <- resampling_cv(data, lrn("classif.glmnet"), msr("classif.recall"), resample)
+  output <- data.frame(matrix(rep(0, times = 36), ncol = 4, nrow = 9))
+  colnames(output) <- c("classifier", "value", "imbalance", "performance")
+  output[,1] <- c(rep("NB", times = 3), rep("RF", times = 3), rep("kNN", times = 3))
+  output[,3] <- rep(imb, times = 9)
+  output[,4] <- rep(c("bACC", "F1", "Recall"), times = 3) 
   
   #naive bayes
   output[1,2] <- resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.bacc"), resample)
@@ -161,53 +150,80 @@ classify_resampling <- function(data, resample) {
   output[3,2] <- resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.recall"), resample)
   
   #rf
-  output[1,3] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), resample)
-  output[2,3] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), resample)
-  output[3,3] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), resample)
+  output[4,2] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), resample)
+  output[5,2] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), resample)
+  output[6,2] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), resample)
   
   #knn
-  output[1,4] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), resample)
-  output[2,4] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), resample)
-  output[3,4] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), resample)
+  output[7,2] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), resample)
+  output[8,2] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), resample)
+  output[9,2] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), resample)
   
   output
 }
 
 ### SMOTE
 
-classify_resampling(data4, SMOTE)
-classify_resampling(data9, SMOTE)
-classify_resampling(data19, SMOTE)
-classify_resampling(data99, SMOTE)
-classify_resampling(data199, SMOTE)
+smote4 <- classify_resampling(data4, SMOTE, "1:4")
+smote9 <- classify_resampling(data9, SMOTE, "1:9")
+smote19 <- classify_resampling(data19, SMOTE, "1:19")
+smote99 <- classify_resampling(data99, SMOTE, "1:99")
+smote199 <- classify_resampling(data199, SMOTE, "1:199")
+
+smote <- rbind(smote4, smote9, smote19, smote99, smote199)
+smote$imbalance <- factor(smote$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 
 ### SBC
 
-classify_resampling(data4, SBC)
-classify_resampling(data9, SBC)
-classify_resampling(data19, SBC)
-classify_resampling(data99, SBC)
-classify_resampling(data199, SBC)
+sbc4 <- classify_resampling(data4, SBC, "1:4")
+sbc9 <- classify_resampling(data9, SBC, "1:9")
+sbc19 <- classify_resampling(data19, SBC, "1:19")
+sbc99 <- classify_resampling(data99, SBC, "1:99")
+sbc199 <- classify_resampling(data199, SBC, "1:199")
+
+sbc <- rbind(sbc4, sbc9, sbc19, sbc99, sbc199)
+sbc$imbalance <- factor(sbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
 
 ### ROS
 
-classify_resampling(data4, ROS)
-classify_resampling(data9, ROS)
-classify_resampling(data19, ROS)
-classify_resampling(data99, ROS)
-classify_resampling(data199, ROS)
+ros4 <- classify_resampling(data4, ROS, "1:4")
+ros9 <- classify_resampling(data9, ROS, "1:9")
+ros19 <- classify_resampling(data19, ROS, "1:19")
+ros99 <- classify_resampling(data99, ROS, "1:99")
+ros199 <- classify_resampling(data199, ROS, "1:199")
+
+ros <- rbind(ros4, ros9, ros19, ros99, ros199)
+ros$imbalance <- factor(ros$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
 
 ### RUS
 
-classify_resampling(data4, RUS)
-classify_resampling(data9, RUS)
-classify_resampling(data19, RUS)
-classify_resampling(data99, RUS)
-classify_resampling(data199, RUS)
+rus4 <- classify_resampling(data4, RUS, "1:4")
+rus9 <- classify_resampling(data9, RUS, "1:9")
+rus19 <- classify_resampling(data19, RUS, "1:19")
+rus99 <- classify_resampling(data99, RUS, "1:99")
+rus199 <- classify_resampling(data199, RUS, "1:199")
 
+rus <- rbind(rus4, rus9, rus19, rus99, rus199)
+rus$imbalance <- factor(rus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+### COMPARISON
 
+comp1 <- data.frame(matrix(rep(0, times = 75), ncol = 3, nrow = 25))
+colnames(comp1) <- c("method", "imbalance", "bACC")
+comp1[,1] <- c(rep("No Resampling", times = 5), rep("SMOTE", times = 5), 
+               rep("ROS", times = 5), rep("SBC", times = 5), 
+               rep("RUS", times = 5))
+comp1[,2] <- rep(c("1:4", "1:9", "1:19", "1:99", "1:199"), times = 5) 
+comp1[,3] <- c(raw[4,2], raw[13,2], raw[22,2], raw[31,2], raw[40,2],
+               smote[4,2], smote[13,2], smote[22,2], smote[31,2], smote[40,2],
+               ros[4,2], ros[13,2], ros[22,2], ros[31,2], ros[40,2],
+               sbc[4,2], sbc[13,2], sbc[22,2], sbc[31,2], sbc[40,2],
+               rus[4,2], rus[13,2], rus[22,2], rus[31,2], rus[40,2])
+comp1$imbalance <- factor(comp1$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS", "SBC", "RUS"))
 
 ### HYBRID
 

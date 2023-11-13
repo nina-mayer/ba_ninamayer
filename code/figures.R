@@ -4,6 +4,7 @@ library(ggforce)
 library(patchwork)
 library(bimba)
 library(caret)
+library(RColorBrewer)
 
 ### set text sizes
 
@@ -42,14 +43,14 @@ plot_imbdata <- ggplot(imbdata, mapping = aes(x = X1, y = X2, color = class, sha
 underdata <- RUS(imbdata)
 plot_underdata <- ggplot(underdata, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
   geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
-  ggtitle("Undersampling") + xlab("") + ylab("") + theme_bw() + my_theme +
+  ggtitle("Undersampling (RUS)") + xlab("") + ylab("") + theme_bw() + my_theme +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank())
 #oversampling
 overdata <- SMOTE(imbdata)
 plot_overdata <- ggplot(overdata, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
   geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
-  ggtitle("Oversampling") + xlab("") + ylab("") + theme_bw() + my_theme +
+  ggtitle("Oversampling (SMOTE)") + xlab("") + ylab("") + theme_bw() + my_theme +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank())
 
@@ -121,5 +122,67 @@ jpeg("syn_data_viz.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(syn_data_viz, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
   geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) + 
   ggtitle("Imbalance Ratio: 1:9") + xlab("X1") + ylab("X2") + 
+  theme_bw() + my_theme
+dev.off()
+
+
+
+### Classification Results 
+
+# no resampling
+jpeg("raw_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(raw, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                          group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# smote
+jpeg("smote_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(smote, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                          group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# sbc
+jpeg("sbc_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(sbc, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                            group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# ros
+jpeg("ros_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(ros, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                          group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# rus
+jpeg("rus_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(rus, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                          group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# comp1
+jpeg("comp1.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(comp1, mapping = aes(x = imbalance, y = bACC, group = method, color = method)) + 
+  geom_point() + geom_line(size = 1) + scale_color_viridis_d() + 
+  xlab("Imbalance Ratio")  + labs(color = "Resampling Method") +
   theme_bw() + my_theme
 dev.off()
