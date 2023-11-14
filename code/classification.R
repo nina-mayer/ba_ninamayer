@@ -380,7 +380,13 @@ bag_resampling_cv_nb <- function(data, perf, method) {
     
     #predict test data with ensemble model
     prediction <- predict.modelBag(model,newdata = test, type = "class" )
-    results[i] <- perf(test$class, prediction)
+    if(perf == bacc){
+      results[i] <- perf(test$class, prediction)
+    }
+    else{
+      results[i] <- perf(test$class, prediction, positive = "1")
+    }
+    
   }
   #aggregate results
   mean(results)
@@ -406,7 +412,12 @@ bag_resampling_cv_rf <- function(data, perf, method) {
     
     #predict test data with ensemble model
     prediction <- predict.modelBag(model,newdata = test, type = "class" )
-    results[i] <- perf(test$class, prediction)
+    if(perf == bacc){
+      results[i] <- perf(test$class, prediction)
+    }
+    else{
+      results[i] <- perf(test$class, prediction, positive = "1")
+    }
   }
   #aggregate results
   mean(results)
