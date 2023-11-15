@@ -77,8 +77,8 @@ raw <- rbind(raw4, raw9, raw19, raw99, raw199)
 raw$imbalance <- factor(raw$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 
-classify(spectf_heart)
-classify(fraud_detection)
+raw_spect <- classify(spectf_heart, "1:3.84")
+raw_fd <- classify(fraud_detection, "1:577")
 
 
 ### RESAMPLING METHODS
@@ -212,7 +212,9 @@ rus199 <- classify_resampling(data199, RUS, "1:199")
 rus <- rbind(rus4, rus9, rus19, rus99, rus199)
 rus$imbalance <- factor(rus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
-### COMPARISON
+
+
+### COMPARISON 1
 
 comp1 <- data.frame(matrix(rep(0, times = 75), ncol = 3, nrow = 25))
 colnames(comp1) <- c("method", "imbalance", "bACC")
@@ -347,21 +349,20 @@ smoterus$imbalance <- factor(smoterus$imbalance, levels = c("1:4", "1:9", "1:19"
 
 ### Combination of Bagging and Resampling Methods
 
-### hyb_resampling_cv - function
+
+### bag_resampling_cv - functions
 ###
-### classifies data with 5 fold cv while applying the resampling method to the 
-### training data in each fold. The classifying learner and the performance measure 
-### is to be specified
+### classifies data with 5 fold cv while applying the hybrid method to the 
+### training data in each fold. The performance measure is to be specified.
 ### Input:
 ###   data      A dataframe. The data to be classified
-###   lrnr      An object of mlr3-class Learner. The learner to be trained
 ###   perf      An object of mlr3-class Measure. The measure of the performance evaluation.
-###   oversample  A "bimba"-method. The oversampling method
-###   undersample  A "bimba"-method. The undersampling method
+###   method    A "ebmc"-method. The hybrid method
+###   alg       A string. The algorithm for the weak learners.
 ### Output:
 ###   A numeric. The aggregated performance measure
 
-bag_resampling_cv_nb <- function(data, perf, method) {
+bag_resampling_cv <- function(data, perf, method, alg) {
   #manual 5-fold CV
   splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
   results <- rep(0, times = 5)
@@ -376,47 +377,17 @@ bag_resampling_cv_nb <- function(data, perf, method) {
     test <- splits[[i]]
     
     #apply method to training data and learn an ensemble model of weak learners
-    model <- method(class ~., data = train, size = 20, alg = "nb")
+    model <- method(class ~., data = train, size = 100, alg = alg)
     
     #predict test data with ensemble model
     prediction <- predict.modelBag(model,newdata = test, type = "class" )
-    if(perf == bacc){
-      results[i] <- perf(test$class, prediction)
+    if(perf == "bacc"){
+      results[i] <- bacc(test$class, prediction)
     }
-    else{
-      results[i] <- perf(test$class, prediction, positive = "1")
-    }
-    
-  }
-  #aggregate results
-  mean(results)
-}
-
-
-bag_resampling_cv_rf <- function(data, perf, method) {
-  #manual 5-fold CV
-  splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
-  results <- rep(0, times = 5)
-  for(i in 1:5){
-    #define train and test for split
-    train <- data.frame()
-    trainsets <- 1:5
-    trainsets <- trainsets[!trainsets %in% c(i)]
-    for(j in 1:4){
-      train <- rbind(train, splits[[j]])
-    }
-    test <- splits[[i]]
-    
-    #apply method to training data and learn an ensemble model of weak learners
-    model <- method(class ~., data = train, size = 20, alg = "rf", rf.ntree = 50)
-    
-    #predict test data with ensemble model
-    prediction <- predict.modelBag(model,newdata = test, type = "class" )
-    if(perf == bacc){
-      results[i] <- perf(test$class, prediction)
-    }
-    else{
-      results[i] <- perf(test$class, prediction, positive = "1")
+    else if(perf == "fbeta"){
+      results[i] <- fbeta(test$class, prediction, positive = "1")
+    } else {
+      results[i] <- recall(test$class, prediction, positive = "1")
     }
   }
   #aggregate results
@@ -424,15 +395,14 @@ bag_resampling_cv_rf <- function(data, perf, method) {
 }
 
 
-### hyb_classify_resampling - function
+### bag_classify_resampling - function
 ###
-### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
-### performance with 5-fold cv and 3 performance metrics while resampling the data
-### with one oversampling and one undersampling method
+### classifies a (imbalanced) data set according to 2 classifiers and evaluates 
+### performance with 5-fold cv and 3 performance metrics while using a hybrid approach
+### of a resampling method and bagging
 ### Input:
 ###   data    A dataframe. The data to be classified
-###   oversample  A "bimba"-method. The oversampling method
-###   undersample  A "bimba"-method. The undersampling method
+###   method  A "ebmc"-method. The hybrid method
 ###   imb   A string. The data imbalance
 ### Output:
 ###   A dataframe with the performance scores for each learner
@@ -441,35 +411,62 @@ bag_classify_resampling <- function(data, method, imb) {
   #define output dataframe
   output <- data.frame(matrix(rep(0, times = 24), ncol = 4, nrow = 6))
   colnames(output) <- c("classifier", "value", "imbalance", "performance")
-  output[,1] <- c(rep("NB", times = 3), rep("RF", times = 3))
+  output[,1] <- c(rep("NB", times = 3), rep("CART", times = 3))
   output[,3] <- rep(imb, times = 6)
   output[,4] <- rep(c("bACC", "F1", "Recall"), times = 2) 
   
   
   #naive bayes
-  output[1,2] <- bag_resampling_cv_nb(data, bacc, method)
-  output[2,2] <- bag_resampling_cv_nb(data, fbeta, method)
-  output[3,2] <- bag_resampling_cv_nb(data, recall, method)
+  output[1,2] <- bag_resampling_cv(data, "bacc", method, "nb")
+  output[2,2] <- bag_resampling_cv(data, "fbeta", method, "nb")
+  output[3,2] <- bag_resampling_cv(data, "recall", method, "nb")
   
-  #rf
-  output[4,2] <- bag_resampling_cv_rf(data, bacc, method)
-  output[5,2] <- bag_resampling_cv_rf(data, fbeta, method)
-  output[6,2] <- bag_resampling_cv_rf(data, recall, method)
+  #cart
+  output[4,2] <- bag_resampling_cv(data, "bacc", method, "cart")
+  output[5,2] <- bag_resampling_cv(data, "fbeta", method, "cart")
+  output[6,2] <- bag_resampling_cv(data, "recall", method, "cart")
   
   output
 }
 
+### SMOTE + Bagging
 
-bag_classify_resampling(data4, sbag, "1:4")
+smotebag4 <- bag_classify_resampling(data4, sbag, "1:4")
+smotebag9 <- bag_classify_resampling(data9, sbag, "1:9")
+smotebag19 <- bag_classify_resampling(data19, sbag, "1:19")
+smotebag99 <- bag_classify_resampling(data99, sbag, "1:99")
+smotebag199 <- bag_classify_resampling(data199, sbag, "1:199")
+
+smotebag <- rbind(smotebag4, smotebag9, smotebag19, smotebag99, smotebag199)
+smotebag$imbalance <- factor(smotebag$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 
+### RUS + Bagging
+
+rusbag4 <- bag_classify_resampling(data4, ub, "1:4")
+rusbag9 <- bag_classify_resampling(data9, ub, "1:9")
+rusbag19 <- bag_classify_resampling(data19, ub, "1:19")
+rusbag99 <- bag_classify_resampling(data99, ub, "1:99")
+rusbag199 <- bag_classify_resampling(data199, ub, "1:199")
+
+rusbag <- rbind(rusbag4, rusbag9, rusbag19, rusbag99, rusbag199)
+rusbag$imbalance <- factor(rusbag$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 
+### COMPARISON 2
 
-test4 <- sbag(class ~ ., data = data4, size = 20, alg = "nb")
-
-splits <- split(data4, sample(rep(1:5, times = rep(2000, times = 5))))
-train <- rbind(splits[[1]], splits[[2]], splits[[3]], splits[[4]])
-test <- splits[[5]]
-train_smotebag <- sbag(class ~ ., data = train, size = 20, alg = "nb")
-prediction_smotebag <- predict.modelBag(train_smotebag, newdata = test, type = "class")
+comp2 <- data.frame(matrix(rep(0, times = 90), ncol = 3, nrow = 30))
+colnames(comp2) <- c("method", "imbalance", "bACC")
+comp2[,1] <- c(rep("SMOTE", times = 5), rep("SBC", times = 5), 
+               rep("SMOTE + SBC", times = 5), rep("SMOTE + RUS", times = 5), 
+               rep("SMOTE + Bagging", times = 5), rep("RUS + Bagging", times = 5))
+comp2[,2] <- rep(c("1:4", "1:9", "1:19", "1:99", "1:199"), times = 6) 
+comp2[,3] <- c(smote[4,2], smote[13,2], smote[22,2], smote[31,2], smote[40,2],
+               sbc[4,2], sbc[13,2], sbc[22,2], sbc[31,2], sbc[40,2],
+               smotesbc[4,2], smotesbc[13,2], smotesbc[22,2], smotesbc[31,2], smotesbc[40,2],
+               smoterus[4,2], smoterus[13,2], smoterus[22,2], smoterus[31,2], smoterus[40,2],
+               smotebag[4,2], smotebag[10,2], smotebag[16,2], smotebag[22,2], smotebag[28,2],
+               rusbag[4,2], rusbag[10,2], rusbag[16,2], rusbag[22,2], rusbag[28,2])
+comp2$imbalance <- factor(comp2$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+comp2$method <- factor(comp2$method, levels = c("SMOTE", "SBC", "SMOTE + SBC", "SMOTE + RUS", 
+                                                "SMOTE + Bagging", "RUS + Bagging"))

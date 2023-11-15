@@ -187,6 +187,8 @@ ggplot(comp1, mapping = aes(x = imbalance, y = bACC, group = method, color = met
   theme_bw() + my_theme
 dev.off()
 
+
+
 # smotesbc
 jpeg("smotesbc_results.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(smotesbc, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
@@ -197,12 +199,40 @@ ggplot(smotesbc, mapping = aes(x = imbalance, y = value, color = classifier, lin
   theme_bw() + my_theme
 dev.off()
 
-# smotesbc
+# smoterus
 jpeg("smoterus_results.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(smoterus, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
                                group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
   labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# smotebag
+jpeg("smotebag_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(smotebag, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                               group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#663300", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# rusbag
+jpeg("rusbag_results.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(rusbag, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
+                               group = interaction(classifier, performance))) + 
+  geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("#663300", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  labs(color = "Classifier", linetype = "Performance Measure") +
+  theme_bw() + my_theme
+dev.off()
+
+# comp2
+jpeg("comp2.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(comp2, mapping = aes(x = imbalance, y = bACC, group = method, color = method)) + 
+  geom_point() + geom_line(size = 1) + scale_color_viridis_d() + 
+  xlab("Imbalance Ratio")  + labs(color = "Resampling Method") +
   theme_bw() + my_theme
 dev.off()
