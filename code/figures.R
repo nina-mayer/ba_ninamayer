@@ -135,7 +135,7 @@ ggplot(raw, mapping = aes(x = imbalance, y = value, color = classifier, linetype
                           group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -145,7 +145,7 @@ ggplot(smote, mapping = aes(x = imbalance, y = value, color = classifier, linety
                           group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -155,7 +155,7 @@ ggplot(sbc, mapping = aes(x = imbalance, y = value, color = classifier, linetype
                             group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -165,7 +165,7 @@ ggplot(ros, mapping = aes(x = imbalance, y = value, color = classifier, linetype
                           group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -175,7 +175,7 @@ ggplot(rus, mapping = aes(x = imbalance, y = value, color = classifier, linetype
                           group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -183,7 +183,7 @@ dev.off()
 jpeg("comp1.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(comp1, mapping = aes(x = imbalance, y = bACC, group = method, color = method)) + 
   geom_point() + geom_line(size = 1) + scale_color_viridis_d() + 
-  xlab("Imbalance Ratio")  + labs(color = "Resampling Method") +
+  xlab("Imbalance Ratio")  + labs(color = "Resampling Method") + ylim(0.75,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -195,7 +195,7 @@ ggplot(smotesbc, mapping = aes(x = imbalance, y = value, color = classifier, lin
                           group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -205,7 +205,7 @@ ggplot(smoterus, mapping = aes(x = imbalance, y = value, color = classifier, lin
                                group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#1B9E77", "#D95F02", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -215,7 +215,7 @@ ggplot(smotebag, mapping = aes(x = imbalance, y = value, color = classifier, lin
                                group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#663300", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -225,7 +225,7 @@ ggplot(rusbag, mapping = aes(x = imbalance, y = value, color = classifier, linet
                                group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
   scale_color_manual(values = c("#663300", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
-  labs(color = "Classifier", linetype = "Performance Measure") +
+  labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
 
@@ -233,6 +233,6 @@ dev.off()
 jpeg("comp2.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(comp2, mapping = aes(x = imbalance, y = bACC, group = method, color = method)) + 
   geom_point() + geom_line(size = 1) + scale_color_viridis_d() + 
-  xlab("Imbalance Ratio")  + labs(color = "Resampling Method") +
+  xlab("Imbalance Ratio")  + labs(color = "Resampling Method") + ylim(0.75,1) +
   theme_bw() + my_theme
 dev.off()

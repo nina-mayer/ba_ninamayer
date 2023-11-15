@@ -2,6 +2,7 @@ library(mlr3)
 library(mlr3learners)
 library(mlr3viz)
 library(mlr3measures)
+library(mlr3tuning)
 
 ###grade_prediction
 
@@ -103,3 +104,24 @@ bmr_ag <- bmr$aggregate()
 bmr_ag[, c("task_id", "learner_id", "classif.ce")]
 
 autoplot(bmr)
+
+
+### hyperparametertuning
+
+task <- TaskClassif$new("train", train_smote, "class")
+lrnr <- lrn("classif.kknn", k = to_tune(1,10))
+tuner <- tnr("grid_search", batch_size = 5)
+terminator <- trm("stagnation", iters = 3, threshold = 0.01)
+
+instance <- ti(task = task, learner = lrnr, resampling = cv5, terminator = terminator)
+tuner$optimize(instance)
+instance$result$learner_param_vals
+lrnr_tuned <- lrn("classif.kknn")
+lrnr_tuned$param_set$values <- instance$result_learner_param_vals
+lrnr_tuned$train(task)
+at <- auto_tuner(tuner = tuner, learner = lrnr, resampling = cv5, measure = msr("classif.ce"))
+at$train(task)
+prediction <- at$predict_newdata(test)
+prediction$score(msr("classif.bacc"))
+prediction$score(msr("classif.recall"))
+prediction$score(msr("classif.fbeta"))

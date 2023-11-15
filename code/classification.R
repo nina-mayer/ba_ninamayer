@@ -1,6 +1,7 @@
 library(mlr3)
 library(mlr3learners)
 library(mlr3measures)
+library(mlr3tuning)
 library(tidyverse)
 library(e1071)
 library(bimba)
@@ -76,9 +77,9 @@ raw199 <- classify(data199, "1:199")
 raw <- rbind(raw4, raw9, raw19, raw99, raw199)
 raw$imbalance <- factor(raw$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
-
 raw_spect <- classify(spectf_heart, "1:3.84")
-raw_fd <- classify(fraud_detection, "1:577")
+raw_fd <- classify(fraud_detection, "1:577.9")
+
 
 
 ### RESAMPLING METHODS
@@ -97,10 +98,10 @@ raw_fd <- classify(fraud_detection, "1:577")
 ###   A numeric. The aggregated performance measure
 
 
-resampling_cv <- function(data, lrnr, perf, resample) {
+resampling_cv <- function(data, lrnr, resample) {
   #manual 5-fold CV
   splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
-  results <- rep(0, times = 5)
+  results <- data.frame(matrix(rep(0, times = 15), ncol = 3, nrow = 5))
   for(i in 1:5){
     #define train and test for split
     train <- data.frame()
@@ -121,10 +122,16 @@ resampling_cv <- function(data, lrnr, perf, resample) {
     
     #predict test data with learner
     prediction <- learner$predict_newdata(test)
-    results[i] <- prediction$score(perf)
+    results[i,1] <- prediction$score(msr("classif.bacc"))
+    results[i,2] <- prediction$score(msr("classif.recall"))
+    results[i,3] <- prediction$score(msr("classif.fbeta"))
   }
   #aggregate results
-  mean(results)
+  output <- rep(0, times = 3)
+  for(i in 1:3){
+    output[i] <- mean(results[,i])
+  }
+  output
 }
 
 
@@ -148,19 +155,22 @@ classify_resampling <- function(data, resample, imb) {
   output[,4] <- rep(c("bACC", "F1", "Recall"), times = 3) 
   
   #naive bayes
-  output[1,2] <- resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.bacc"), resample)
-  output[2,2] <- resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.fbeta"), resample)
-  output[3,2] <- resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.recall"), resample)
+  measures <- resampling_cv(data, lrn("classif.naive_bayes"), resample)
+  output[1,2] <- measures[1]
+  output[2,2] <- measures[2]
+  output[3,2] <- measures[3]
   
   #rf
-  output[4,2] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), resample)
-  output[5,2] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), resample)
-  output[6,2] <- resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), resample)
+  measures <- resampling_cv(data, lrn("classif.ranger"), resample)
+  output[4,2] <- measures[1]
+  output[5,2] <- measures[2]
+  output[6,2] <- measures[3]
   
   #knn
-  output[7,2] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), resample)
-  output[8,2] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), resample)
-  output[9,2] <- resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), resample)
+  measures <- resampling_cv(data, lrn("classif.kknn"), resample)
+  output[7,2] <- measures[1]
+  output[8,2] <- measures[2]
+  output[9,2] <- measures[3]
   
   output
 }
@@ -176,6 +186,9 @@ smote199 <- classify_resampling(data199, SMOTE, "1:199")
 smote <- rbind(smote4, smote9, smote19, smote99, smote199)
 smote$imbalance <- factor(smote$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+smote_spect <- classify_resampling(spectf_heart, SMOTE, "1:3.84")
+smote_fd <- classify_resampling(fraud_detection, SMOTE, "1:577.9")
+
 
 ### SBC
 
@@ -187,6 +200,9 @@ sbc199 <- classify_resampling(data199, SBC, "1:199")
 
 sbc <- rbind(sbc4, sbc9, sbc19, sbc99, sbc199)
 sbc$imbalance <- factor(sbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
+sbc_spect <- classify_resampling(spectf_heart, SBC, "1:3.84")
+sbc_fd <- classify_resampling(fraud_detection, SBC, "1:577.9")
 
 
 ### ROS
@@ -212,6 +228,125 @@ rus199 <- classify_resampling(data199, RUS, "1:199")
 rus <- rbind(rus4, rus9, rus19, rus99, rus199)
 rus$imbalance <- factor(rus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+### HYPERPARAMETER TUNING
+
+### hyper_resampling_cv - function
+###
+### classifies data with 5 fold cv while applying the resampling method to the 
+### training data in each fold. The classifying learner is to be specified
+### Input:
+###   data      A dataframe. The data to be classified
+###   lrnr      A string. The learner to be trained
+###   resample  A "bimba"-method. The resampling method
+### Output:
+###   A numeric. The aggregated performance measure
+
+
+hyper_resampling_cv <- function(data, lrnr, resample) {
+  #manual 5-fold CV
+  splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
+  results <- data.frame(matrix(rep(0, times = 15), ncol = 3, nrow = 5))
+  for(i in 1:5){
+    #define train and test for split
+    train <- data.frame()
+    trainsets <- 1:5
+    trainsets <- trainsets[!trainsets %in% c(i)]
+    for(j in 1:4){
+      train <- rbind(train, splits[[j]])
+    }
+    test <- splits[[i]]
+    
+    #apply smote to training data
+    train <- resample(train)
+    
+    #learn model with new training data while tuning hyperparameters
+    task <- TaskClassif$new("train", train, "class", positive = "1")
+    tuner <- tnr("grid_search")
+    terminator <- trm("run_time", secs = 30)
+    
+    if(lrnr == "rf"){
+      learner <- lrn("classif.ranger", max.depth = to_tune(1,35), num.trees = to_tune(1,2000))
+    } else if(lrnr == "knn") {
+      learner <- lrn("classif.kknn", k = to_tune(3,30))
+    }
+    
+    #initialize auto-tuning
+    auto_tune <- auto_tuner(tuner = tuner, learner = learner, rsmp("cv", folds = 3), 
+                            measure = msr("classif.ce"), terminator = terminator)
+    auto_tune$train(task)
+    
+    #predict test data with learner
+    prediction <- auto_tune$predict_newdata(test)
+    results[i,1] <- prediction$score(msr("classif.bacc"))
+    results[i,2] <- prediction$score(msr("classif.recall"))
+    results[i,3] <- prediction$score(msr("classif.fbeta"))
+  }
+  #aggregate results
+  output <- rep(0, times = 3)
+  for(i in 1:3){
+    output[i] <- mean(results[,i])
+  }
+  output
+}
+
+
+### classify_hyper_resampling - function
+###
+### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
+### performance with 5-fold cv and 3 performance metrics while resampling the data
+### and performing hyperparameter tuning on each fold
+### Input:
+###   data    A dataframe. The data to be classified
+###   resample  A "bimba"-method. The resampling method
+###   imb   A string. The data imbalance
+### Output:
+###   A dataframe with the performance scores for each learner
+
+classify_hyper_resampling <- function(data, resample, imb) {
+  #define output dataframe
+  output <- data.frame(matrix(rep(0, times = 24), ncol = 4, nrow = 6))
+  colnames(output) <- c("classifier", "value", "imbalance", "performance")
+  output[,1] <- c(rep("RF", times = 3), rep("kNN", times = 3))
+  output[,3] <- rep(imb, times = 6)
+  output[,4] <- rep(c("bACC", "Recall", "F1"), times = 2) 
+  
+  
+  #rf
+  measures <- hyper_resampling_cv(data, "rf", resample)
+  output[1,2] <- measures[1]
+  output[2,2] <- measures[2]
+  output[3,2] <- measures[3]
+  
+  #knn
+  measures <- hyper_resampling_cv(data, "knn", resample)
+  output[4,2] <- measures[1]
+  output[5,2] <- measures[2]
+  output[6,2] <- measures[3]
+  
+  output
+}
+
+### SMOTE + Hyperparametertuning
+
+hyper_smote4 <- classify_hyper_resampling(data4, SMOTE, "1:4")
+hyper_smote9 <- classify_hyper_resampling(data9, SMOTE, "1:9")
+hyper_smote19 <- classify_hyper_resampling(data19, SMOTE, "1:19")
+hyper_smote99 <- classify_hyper_resampling(data99, SMOTE, "1:99")
+hyper_smote199 <- classify_hyper_resampling(data199, SMOTE, "1:199")
+
+hyper_smote <- rbind(hyper_smote4, hyper_smote9, hyper_smote19, hyper_smote99, hyper_smote199)
+hyper_smote$imbalance <- factor(hyper_smote$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
+### SBC + Hyperparametertuning
+
+hyper_sbc4 <- classify_hyper_resampling(data4, SBC, "1:4")
+hyper_sbc9 <- classify_hyper_resampling(data9, SBC, "1:9")
+hyper_sbc19 <- classify_hyper_resampling(data19, SBC, "1:19")
+hyper_sbc99 <- classify_hyper_resampling(data99, SBC, "1:99")
+hyper_sbc199 <- classify_hyper_resampling(data199, SBC, "1:199")
+
+hyper_sbc <- rbind(hyper_sbc4, hyper_sbc9, hyper_sbc19, hyper_sbc99, hyper_sbc199)
+hyper_sbc$imbalance <- factor(hyper_sbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 
 ### COMPARISON 1
@@ -250,10 +385,10 @@ comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS",
 ### Output:
 ###   A numeric. The aggregated performance measure
 
-hyb_resampling_cv <- function(data, lrnr, perf, oversample, undersample) {
+hyb_resampling_cv <- function(data, lrnr, oversample, undersample) {
   #manual 5-fold CV
   splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
-  results <- rep(0, times = 5)
+  results <- data.frame(matrix(rep(0, times = 15), ncol = 3, nrow = 5))
   for(i in 1:5){
     #define train and test for split
     train <- data.frame()
@@ -275,10 +410,16 @@ hyb_resampling_cv <- function(data, lrnr, perf, oversample, undersample) {
     
     #predict test data with learner
     prediction <- learner$predict_newdata(test)
-    results[i] <- prediction$score(perf)
+    results[i,1] <- prediction$score(msr("classif.bacc"))
+    results[i,2] <- prediction$score(msr("classif.recall"))
+    results[i,3] <- prediction$score(msr("classif.fbeta"))
   }
   #aggregate results
-  mean(results)
+  output <- rep(0, times = 3)
+  for(i in 1:3){
+    output[i] <- mean(results[,i])
+  }
+  output
 }
 
 
@@ -305,19 +446,22 @@ hyb_classify_resampling <- function(data, oversample, undersample, imb) {
   
   
   #naive bayes
-  output[1,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.bacc"), oversample, undersample)
-  output[2,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.fbeta"), oversample, undersample)
-  output[3,2] <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), msr("classif.recall"), oversample, undersample)
+  measures <- hyb_resampling_cv(data, lrn("classif.naive_bayes"), oversample, undersample)
+  output[1,2] <- measures[1]
+  output[2,2] <- measures[2]
+  output[3,2] <- measures[3]
   
   #rf
-  output[4,2] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.bacc"), oversample, undersample)
-  output[5,2] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.fbeta"), oversample, undersample)
-  output[6,2] <- hyb_resampling_cv(data, lrn("classif.ranger"), msr("classif.recall"), oversample, undersample)
+  measures <- hyb_resampling_cv(data, lrn("classif.ranger"), oversample, undersample)
+  output[4,2] <- measures[1]
+  output[5,2] <- measures[2]
+  output[6,2] <- measures[3]
   
   #knn
-  output[7,2] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.bacc"), oversample, undersample)
-  output[8,2] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.fbeta"), oversample, undersample)
-  output[9,2] <- hyb_resampling_cv(data, lrn("classif.kknn"), msr("classif.recall"), oversample, undersample)
+  measures <- hyb_resampling_cv(data, lrn("classif.kknn"), oversample, undersample)
+  output[7,2] <- measures[1]
+  output[8,2] <- measures[2]
+  output[9,2] <- measures[3]
   
   output
 }
@@ -362,10 +506,10 @@ smoterus$imbalance <- factor(smoterus$imbalance, levels = c("1:4", "1:9", "1:19"
 ### Output:
 ###   A numeric. The aggregated performance measure
 
-bag_resampling_cv <- function(data, perf, method, alg) {
+bag_resampling_cv <- function(data, method, alg) {
   #manual 5-fold CV
   splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
-  results <- rep(0, times = 5)
+  results <- data.frame(matrix(rep(0, times = 15), ncol = 3, nrow = 5))
   for(i in 1:5){
     #define train and test for split
     train <- data.frame()
@@ -381,17 +525,17 @@ bag_resampling_cv <- function(data, perf, method, alg) {
     
     #predict test data with ensemble model
     prediction <- predict.modelBag(model,newdata = test, type = "class" )
-    if(perf == "bacc"){
-      results[i] <- bacc(test$class, prediction)
-    }
-    else if(perf == "fbeta"){
-      results[i] <- fbeta(test$class, prediction, positive = "1")
-    } else {
-      results[i] <- recall(test$class, prediction, positive = "1")
-    }
+    
+    results[i,1] <- bacc(test$class, prediction)
+    results[i,2] <- fbeta(test$class, prediction, positive = "1")
+    results[i,3] <- recall(test$class, prediction, positive = "1")
   }
   #aggregate results
-  mean(results)
+  output <- rep(0, times = 3)
+  for(i in 1:3){
+    output[i] <- mean(results[,i])
+  }
+  output
 }
 
 
@@ -417,14 +561,16 @@ bag_classify_resampling <- function(data, method, imb) {
   
   
   #naive bayes
-  output[1,2] <- bag_resampling_cv(data, "bacc", method, "nb")
-  output[2,2] <- bag_resampling_cv(data, "fbeta", method, "nb")
-  output[3,2] <- bag_resampling_cv(data, "recall", method, "nb")
+  measures <- bag_resampling_cv(data, method, "nb")
+  output[1,2] <- measures[1]
+  output[2,2] <- measures[2]
+  output[3,2] <- measures[3]
   
   #cart
-  output[4,2] <- bag_resampling_cv(data, "bacc", method, "cart")
-  output[5,2] <- bag_resampling_cv(data, "fbeta", method, "cart")
-  output[6,2] <- bag_resampling_cv(data, "recall", method, "cart")
+  measures <- bag_resampling_cv(data, method, "cart")
+  output[4,2] <- measures[1]
+  output[5,2] <- measures[2]
+  output[6,2] <- measures[3]
   
   output
 }
