@@ -229,6 +229,7 @@ rus <- rbind(rus4, rus9, rus19, rus99, rus199)
 rus$imbalance <- factor(rus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
 ### HYPERPARAMETER TUNING
+detach("package:mlr3measures", unload = TRUE)
 
 ### hyper_resampling_cv - function
 ###
@@ -337,6 +338,16 @@ hyper_smote199 <- classify_hyper_resampling(data199, SMOTE, "1:199")
 hyper_smote <- rbind(hyper_smote4, hyper_smote9, hyper_smote19, hyper_smote99, hyper_smote199)
 hyper_smote$imbalance <- factor(hyper_smote$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+hyper_smote_spect <- classify_hyper_resampling(spectf_heart, SMOTE, "1:3.84")
+hyper_smote_fd <- classify_hyper_resampling(fraud_detection, SMOTE, "1:577.9")
+
+comp_hyper_smote <- rbind(hyper_smote, smote)
+comp_hyper_smote <- comp_hyper_smote[comp_hyper_smote$performance == "bACC",]
+comp_hyper_smote <- comp_hyper_smote[!(comp_hyper_smote$classifier == "NB"),]
+comp_hyper_smote$hyper <- c(rep("yes", times = 10), rep("no", times = 10))
+comp_hyper_smote_rf <- comp_hyper_smote[comp_hyper_smote$classifier == "RF",]
+comp_hyper_smote_knn <- comp_hyper_smote[comp_hyper_smote$classifier == "kNN",]
+
 ### SBC + Hyperparametertuning
 
 hyper_sbc4 <- classify_hyper_resampling(data4, SBC, "1:4")
@@ -348,6 +359,15 @@ hyper_sbc199 <- classify_hyper_resampling(data199, SBC, "1:199")
 hyper_sbc <- rbind(hyper_sbc4, hyper_sbc9, hyper_sbc19, hyper_sbc99, hyper_sbc199)
 hyper_sbc$imbalance <- factor(hyper_sbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+hyper_sbc_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
+hyper_sbc_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+
+comp_hyper_sbc <- rbind(hyper_sbc, sbc)
+comp_hyper_sbc <- comp_hyper_sbc[comp_hyper_sbc$performance == "bACC",]
+comp_hyper_sbc <- comp_hyper_sbc[!(comp_hyper_sbc$classifier == "NB"),]
+comp_hyper_sbc$hyper <- c(rep("yes", times = 10), rep("no", times = 10))
+comp_hyper_sbc_rf <- comp_hyper_sbc[comp_hyper_sbc$classifier == "RF",]
+comp_hyper_sbc_knn <- comp_hyper_sbc[comp_hyper_sbc$classifier == "kNN",]
 
 ### COMPARISON 1
 
@@ -367,7 +387,7 @@ comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS",
 
 
 
-
+library(mlr3measures)
 
 ### HYBRID
 
@@ -477,6 +497,9 @@ smotesbc199 <- hyb_classify_resampling(data199, SMOTE, SBC, "1:199")
 smotesbc <- rbind(smotesbc4, smotesbc9, smotesbc19, smotesbc99, smotesbc199)
 smotesbc$imbalance <- factor(smotesbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+smotesbc_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
+smotesbc_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+
 ### SMOTE + RUS
 
 smoterus4 <- hyb_classify_resampling(data4, SMOTE, RUS, "1:4")
@@ -488,6 +511,8 @@ smoterus199 <- hyb_classify_resampling(data199, SMOTE, RUS, "1:199")
 smoterus <- rbind(smoterus4, smoterus9, smoterus19, smoterus99, smoterus199)
 smoterus$imbalance <- factor(smoterus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+smoterus_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
+smoterus_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
 
 
 
@@ -586,6 +611,9 @@ smotebag199 <- bag_classify_resampling(data199, sbag, "1:199")
 smotebag <- rbind(smotebag4, smotebag9, smotebag19, smotebag99, smotebag199)
 smotebag$imbalance <- factor(smotebag$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+smotebag_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
+smotebag_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+
 
 ### RUS + Bagging
 
@@ -597,6 +625,9 @@ rusbag199 <- bag_classify_resampling(data199, ub, "1:199")
 
 rusbag <- rbind(rusbag4, rusbag9, rusbag19, rusbag99, rusbag199)
 rusbag$imbalance <- factor(rusbag$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
+rusbag_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
+rusbag_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
 
 
 ### COMPARISON 2

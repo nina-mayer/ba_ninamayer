@@ -179,6 +179,35 @@ ggplot(rus, mapping = aes(x = imbalance, y = value, color = classifier, linetype
   theme_bw() + my_theme
 dev.off()
 
+# comp_hyper_smote
+smote_h_rf <- ggplot(comp_hyper_smote_rf, mapping = aes(x = imbalance, y = value, group = hyper, color = hyper)) + 
+  geom_point() + geom_line(size = 1) + scale_color_manual(values = c("#336699", "#99CCFF")) +
+  xlab("Imbalance Ratio")  + ylab("bACC") + ylim(0.85,1) + ggtitle("Random Forrest") +
+  labs(color = "Hyperparametertuning") + theme_bw() + my_theme
+smote_h_knn <- ggplot(comp_hyper_smote_knn, mapping = aes(x = imbalance, y = value, group = hyper, color = hyper)) + 
+  geom_point() + geom_line(size = 1) + scale_color_manual(values = c("#336699", "#99CCFF")) +
+  xlab("Imbalance Ratio")  + ylab("bACC") + ylim(0.85,1) + ggtitle("k-Nearest Neighbours") +
+  labs(color = "Hyperparametertuning") + theme_bw() + my_theme
+
+jpeg("comp_hyper_smote.jpg", units = "in", width = 14, height = 8, res = 800)
+ggarrange(smote_h_rf,smote_h_knn, common.legend = TRUE, legend = "bottom")
+dev.off()
+
+# comp_hyper_sbc
+sbc_h_rf <- ggplot(comp_hyper_sbc_rf, mapping = aes(x = imbalance, y = value, group = hyper, color = hyper)) + 
+  geom_point() + geom_line(size = 1) + scale_color_manual(values = c("#336699", "#99CCFF")) +
+  xlab("Imbalance Ratio")  + ylab("bACC") + ylim(0.85,1) + ggtitle("Random Forrest") +
+  labs(color = "Hyperparametertuning") + theme_bw() + my_theme
+sbc_h_knn <- ggplot(comp_hyper_sbc_knn, mapping = aes(x = imbalance, y = value, group = hyper, color = hyper)) + 
+  geom_point() + geom_line(size = 1) + scale_color_manual(values = c("#336699", "#99CCFF")) +
+  xlab("Imbalance Ratio")  + ylab("bACC") + ylim(0.85,1) + ggtitle("k-Nearest Neighbours") +
+  labs(color = "Hyperparametertuning") + theme_bw() + my_theme
+
+jpeg("comp_hyper_sbc.jpg", units = "in", width = 14, height = 8, res = 800)
+ggarrange(sbc_h_rf,sbc_h_knn, common.legend = TRUE, legend = "bottom")
+dev.off()
+  
+
 # comp1
 jpeg("comp1.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(comp1, mapping = aes(x = imbalance, y = bACC, group = method, color = method)) + 
@@ -214,7 +243,7 @@ jpeg("smotebag_results.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(smotebag, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
                                group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
-  scale_color_manual(values = c("#663300", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  scale_color_manual(values = c("#E69F00", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
   labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
@@ -224,7 +253,7 @@ jpeg("rusbag_results.jpg", units = "in", width = 14, height = 8, res = 800)
 ggplot(rusbag, mapping = aes(x = imbalance, y = value, color = classifier, linetype = performance, 
                                group = interaction(classifier, performance))) + 
   geom_point() + geom_line(size = 1) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
-  scale_color_manual(values = c("#663300", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
+  scale_color_manual(values = c("#E69F00", "#6A3D9A")) + xlab("Imbalance Ratio") + ylab("Value") + 
   labs(color = "Classifier", linetype = "Performance Measure") + ylim(0,1) +
   theme_bw() + my_theme
 dev.off()
