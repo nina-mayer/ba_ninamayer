@@ -216,6 +216,9 @@ ros199 <- classify_resampling(data199, ROS, "1:199")
 ros <- rbind(ros4, ros9, ros19, ros99, ros199)
 ros$imbalance <- factor(ros$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
+ros_spect <- classify_resampling(spectf_heart, ROS, "1:3.84")
+ros_fd <- classify_resampling(fraud_detection, ROS, "1:577.9")
+
 
 ### RUS
 
@@ -227,6 +230,9 @@ rus199 <- classify_resampling(data199, RUS, "1:199")
 
 rus <- rbind(rus4, rus9, rus19, rus99, rus199)
 rus$imbalance <- factor(rus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
+
+rus_spect <- classify_resampling(spectf_heart, RUS, "1:3.84")
+rus_fd <- classify_resampling(fraud_detection, RUS, "1:577.9")
 
 ### HYPERPARAMETER TUNING
 detach("package:mlr3measures", unload = TRUE)
@@ -462,7 +468,7 @@ hyb_classify_resampling <- function(data, oversample, undersample, imb) {
   colnames(output) <- c("classifier", "value", "imbalance", "performance")
   output[,1] <- c(rep("NB", times = 3), rep("RF", times = 3), rep("kNN", times = 3))
   output[,3] <- rep(imb, times = 9)
-  output[,4] <- rep(c("bACC", "F1", "Recall"), times = 3) 
+  output[,4] <- rep(c("bACC", "Recall", "F1"), times = 3) 
   
   
   #naive bayes
@@ -497,8 +503,8 @@ smotesbc199 <- hyb_classify_resampling(data199, SMOTE, SBC, "1:199")
 smotesbc <- rbind(smotesbc4, smotesbc9, smotesbc19, smotesbc99, smotesbc199)
 smotesbc$imbalance <- factor(smotesbc$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
-smotesbc_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
-smotesbc_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+smotesbc_spect <- hyb_classify_resampling(spectf_heart, SMOTE, SBC, "1:3.84")
+smotesbc_fd <- hyb_classify_resampling(fraud_detection, SMOTE, SBC, "1:577.9")
 
 ### SMOTE + RUS
 
@@ -511,8 +517,8 @@ smoterus199 <- hyb_classify_resampling(data199, SMOTE, RUS, "1:199")
 smoterus <- rbind(smoterus4, smoterus9, smoterus19, smoterus99, smoterus199)
 smoterus$imbalance <- factor(smoterus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
-smoterus_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
-smoterus_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+smoterus_spect <- hyb_classify_resampling(spectf_heart, SMOTE, RUS, "1:3.84")
+smoterus_fd <- hyb_classify_resampling(spectf_heart, SMOTE, RUS, "1:3.84")
 
 
 
