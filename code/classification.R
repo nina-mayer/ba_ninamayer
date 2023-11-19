@@ -617,8 +617,8 @@ smotebag199 <- bag_classify_resampling(data199, sbag, "1:199")
 smotebag <- rbind(smotebag4, smotebag9, smotebag19, smotebag99, smotebag199)
 smotebag$imbalance <- factor(smotebag$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
-smotebag_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
-smotebag_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+smotebag_spect <- bag_classify_resampling(spectf_heart, sbag, "1:3.84")
+smotebag_fd <- bag_classify_resampling(fraud_detection, sbag, "1:577.9")
 
 
 ### RUS + Bagging
@@ -632,8 +632,8 @@ rusbag199 <- bag_classify_resampling(data199, ub, "1:199")
 rusbag <- rbind(rusbag4, rusbag9, rusbag19, rusbag99, rusbag199)
 rusbag$imbalance <- factor(rusbag$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", "1:199"))
 
-rusbag_spect <- classify_hyper_resampling(spectf_heart, SBC, "1:3.84")
-rusbag_fd <- classify_hyper_resampling(fraud_detection, SBC, "1:577.9")
+rusbag_spect <- bag_classify_resampling(spectf_heart, ub, "1:3.84")
+rusbag_fd <- bag_classify_resampling(fraud_detection, ub, "1:577.9")
 
 
 ### COMPARISON 2

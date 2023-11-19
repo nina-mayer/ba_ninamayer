@@ -31,6 +31,7 @@ colnames(spectf_heart)[45] <- "class"
 spectf_heart$class <- as.factor(spectf_heart$class)
 levels(spectf_heart$class) <- c(2,3)
 levels(spectf_heart$class) <- c(1,0)
+spectf_heart$class <- factor(spectf_heart$class, levels = c(0,1))
 
 ggplot(spectf_heart, aes(x = class)) + geom_bar(fill = c("coral4", "palegreen4")) + 
   ggtitle("Classes for SPECTF Heart Dataset") +

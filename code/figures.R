@@ -89,6 +89,18 @@ dev.off()
 
 
 
+### Linear Classifier
+
+data_linclass <- sim_imbalanced_data(500, 2, 4, 3)
+jpeg("linclass.jpg", units = "in", width = 14, height = 8, res = 800)
+ggplot(data_linclass, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
+  geom_point(size = 2) + scale_color_manual(values = c("steelblue4", "orangered3")) +
+  geom_segment(aes(x = -7, y = 1, xend = 0, yend = -8), color = "black", size = 2) +
+  xlab("") + ylab("") + theme_bw() + my_theme +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank())
+dev.off()
+
 
 ### SMOTE
 
@@ -103,7 +115,7 @@ data_smote_after <- SMOTE(data_smote_before, k = 3)
 
 plot_data_smote <- ggplot(data_smote_after, mapping = aes(x = X1, y = X2, color = class, shape = class)) + 
   geom_point(size = 2) + scale_color_manual(values = c("steelblue4","orangered3")) + 
-  ggtitle("Data after SMOTE with k = 3") + xlab("") + ylab("") + theme_bw() + my_theme +
+  ggtitle("Data after SMOTE") +xlab("") + ylab("") + theme_bw() + my_theme +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
       axis.text.y = element_blank(), axis.ticks.y = element_blank())
 
