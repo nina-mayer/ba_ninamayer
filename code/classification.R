@@ -375,6 +375,8 @@ comp_hyper_sbc$hyper <- c(rep("yes", times = 10), rep("no", times = 10))
 comp_hyper_sbc_rf <- comp_hyper_sbc[comp_hyper_sbc$classifier == "RF",]
 comp_hyper_sbc_knn <- comp_hyper_sbc[comp_hyper_sbc$classifier == "kNN",]
 
+
+
 ### COMPARISON 1
 
 comp1 <- data.frame(matrix(rep(0, times = 75), ncol = 3, nrow = 25))
@@ -546,7 +548,7 @@ bag_resampling_cv <- function(data, method, alg) {
     train <- data.frame()
     trainsets <- 1:5
     trainsets <- trainsets[!trainsets %in% c(i)]
-    for(j in 1:4){
+    for(j in trainsets){
       train <- rbind(train, splits[[j]])
     }
     test <- splits[[i]]
@@ -558,8 +560,8 @@ bag_resampling_cv <- function(data, method, alg) {
     prediction <- predict.modelBag(model,newdata = test, type = "class" )
     
     results[i,1] <- bacc(test$class, prediction)
-    results[i,2] <- fbeta(test$class, prediction, positive = "1")
-    results[i,3] <- recall(test$class, prediction, positive = "1")
+    results[i,2] <- recall(test$class, prediction, positive = "1")
+    results[i,3] <- fbeta(test$class, prediction, positive = "1")
   }
   #aggregate results
   output <- rep(0, times = 3)
@@ -588,7 +590,7 @@ bag_classify_resampling <- function(data, method, imb) {
   colnames(output) <- c("classifier", "value", "imbalance", "performance")
   output[,1] <- c(rep("NB", times = 3), rep("CART", times = 3))
   output[,3] <- rep(imb, times = 6)
-  output[,4] <- rep(c("bACC", "F1", "Recall"), times = 2) 
+  output[,4] <- rep(c("bACC", "Recall", "F1"), times = 2) 
   
   
   #naive bayes
