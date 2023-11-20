@@ -107,7 +107,7 @@ resampling_cv <- function(data, lrnr, resample) {
     train <- data.frame()
     trainsets <- 1:5
     trainsets <- trainsets[!trainsets %in% c(i)]
-    for(j in 1:4){
+    for(j in trainsets){
       train <- rbind(train, splits[[j]])
     }
     test <- splits[[i]]
@@ -152,7 +152,7 @@ classify_resampling <- function(data, resample, imb) {
   colnames(output) <- c("classifier", "value", "imbalance", "performance")
   output[,1] <- c(rep("NB", times = 3), rep("RF", times = 3), rep("kNN", times = 3))
   output[,3] <- rep(imb, times = 9)
-  output[,4] <- rep(c("bACC", "F1", "Recall"), times = 3) 
+  output[,4] <- rep(c("bACC", "Recall", "F1"), times = 3) 
   
   #naive bayes
   measures <- resampling_cv(data, lrn("classif.naive_bayes"), resample)
@@ -258,7 +258,7 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
     train <- data.frame()
     trainsets <- 1:5
     trainsets <- trainsets[!trainsets %in% c(i)]
-    for(j in 1:4){
+    for(j in trainsets){
       train <- rbind(train, splits[[j]])
     }
     test <- splits[[i]]
@@ -420,7 +420,7 @@ hyb_resampling_cv <- function(data, lrnr, oversample, undersample) {
     train <- data.frame()
     trainsets <- 1:5
     trainsets <- trainsets[!trainsets %in% c(i)]
-    for(j in 1:4){
+    for(j in trainsets){
       train <- rbind(train, splits[[j]])
     }
     test <- splits[[i]]
