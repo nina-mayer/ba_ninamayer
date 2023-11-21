@@ -125,3 +125,121 @@ prediction <- at$predict_newdata(test)
 prediction$score(msr("classif.bacc"))
 prediction$score(msr("classif.recall"))
 prediction$score(msr("classif.fbeta"))
+
+
+
+
+
+tune_resampling <- function(data, lrnr, resample) {
+  #3-fold-CV
+  splits <- split(data, sample(rep(1:3, times = c(2666, 2667, 2667))))
+  best <- data.frame(matrix(rep(0, times = 9), ncol = 3, nrow = 3))
+
+  for(i in 1:3){
+    #define train and validation set for split
+    train <- data.frame()
+    trainsets <- 1:3
+    trainsets <- trainsets[!trainsets %in% c(i)]
+    for(j in trainsets){
+      train <- rbind(train, splits[[j]])
+    }
+    valid <- splits[[i]]
+    
+    
+    #learn models different hyperparameters with training data and find the best
+    if(lrnr == "rf"){
+      hypers <- data.frame(matrix(rep(0, times = 30), ncol = 3, nrow = 10))
+      maxdepth <- 1:35
+      numtrees <- 1:2000
+      
+      #train models
+      for(l in 1:10){
+        hypers[l,1] <- sample(maxdepth, 1)
+        hypers[l,2] <- sample(numtrees, 1)
+        #apply resampling to training data
+        train <- resample(train)
+        
+        #learn model with new training data
+        task <- TaskClassif$new("train", train, "class", positive = "1")
+        learner <- lrn("classif.ranger", max.depth = hypers[l,1], num.trees = hypers[l,2])
+        learner$train(task)
+        
+        #predict test data with learner
+        prediction <- learner$predict_newdata(valid)
+        hypers[l,3] <- prediction$score(msr("classif.bacc"))
+      }
+      
+      #find best model and save hyperparameters
+      best[i,] <- hypers[which.max(hypers[,3]),]
+    } else if(lrnr == "knn") {
+      hypers <- data.frame(matrix(rep(0, times = 30), ncol = 3, nrow = 10))
+      k <- 3:30
+      
+      for(l in 1:10){
+        hypers[l,1] <- sample(k, 1)
+        
+        #apply resampling to training data
+        train <- resample(train)
+        
+        #learn model with new training data
+        task <- TaskClassif$new("train", train, "class", positive = "1")
+        learner <- lrn("classif.kknn", k = hypers[l,1])
+        learner$train(task)
+        
+        #predict test data with learner
+        prediction <- learner$predict_newdata(test)
+        hypers[l,3] <- prediction$score(msr("classif.bacc"))
+      }
+      
+      #find best model and save hyperparameters
+      best[i,] <- hypers[which.max(hypers[,3]),]
+    }
+    
+    #find best model from the 3 resampling procedures
+    best[which.max(best[,3]),]
+  
+  }
+}
+
+hyper_resampling_cv <- function(data, lrnr, resample) {
+  #manual 5-fold CV
+  splits <- split(data, sample(rep(1:5, times = rep(2000, times = 5))))
+  results <- data.frame(matrix(rep(0, times = 15), ncol = 3, nrow = 5))
+  for(i in 1:5){
+    #define train and test for split
+    train <- data.frame()
+    trainsets <- 1:5
+    trainsets <- trainsets[!trainsets %in% c(i)]
+    for(j in trainsets){
+      train <- rbind(train, splits[[j]])
+    }
+    test <- splits[[i]]
+    
+    #find best hyperparameters
+    hypers <- tune_resampling(train, lrnr, resample)
+    
+    #apply smote to training data
+    train <- resample(train)
+    
+    #learn model with new training data
+    task <- TaskClassif$new("train", train, "class", positive = "1")
+    if(lrnr == "rf") {
+      learner <- lrn("classif.ranger", max.depth = hypers[1,1], num.trees = hypers[1,2])
+    } else if (lrnr == "knn") {
+      learner <- lrn("classif.kknn", k = hypers[1,1])
+    }
+    learner$train(task)
+    
+    #predict test data with learner
+    prediction <- learner$predict_newdata(test)
+    results[i,1] <- prediction$score(msr("classif.bacc"))
+    results[i,2] <- prediction$score(msr("classif.recall"))
+    results[i,3] <- prediction$score(msr("classif.fbeta"))
+  }
+  #aggregate results
+  output <- rep(0, times = 3)
+  for(i in 1:3){
+    output[i] <- mean(results[,i])
+  }
+  output
+}
