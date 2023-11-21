@@ -151,13 +151,13 @@ tune_resampling <- function(data, lrnr, resample) {
       hypers <- data.frame(matrix(rep(0, times = 30), ncol = 3, nrow = 10))
       maxdepth <- 1:35
       numtrees <- 1:2000
-      
+      #apply resampling to training data
+        train <- resample(train)
+        
       #train models
       for(l in 1:10){
         hypers[l,1] <- sample(maxdepth, 1)
         hypers[l,2] <- sample(numtrees, 1)
-        #apply resampling to training data
-        train <- resample(train)
         
         #learn model with new training data
         task <- TaskClassif$new("train", train, "class", positive = "1")
@@ -178,27 +178,23 @@ tune_resampling <- function(data, lrnr, resample) {
       for(l in 1:10){
         hypers[l,1] <- sample(k, 1)
         
-        #apply resampling to training data
-        train <- resample(train)
-        
         #learn model with new training data
         task <- TaskClassif$new("train", train, "class", positive = "1")
         learner <- lrn("classif.kknn", k = hypers[l,1])
         learner$train(task)
         
         #predict test data with learner
-        prediction <- learner$predict_newdata(test)
+        prediction <- learner$predict_newdata(valid)
         hypers[l,3] <- prediction$score(msr("classif.bacc"))
       }
       
       #find best model and save hyperparameters
       best[i,] <- hypers[which.max(hypers[,3]),]
     }
-    
-    #find best model from the 3 resampling procedures
-    best[which.max(best[,3]),]
   
   }
+  #find best model from the 3 resampling procedures
+    best[which.max(best[,3]),]
 }
 
 hyper_resampling_cv <- function(data, lrnr, resample) {
@@ -216,7 +212,7 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
     test <- splits[[i]]
     
     #find best hyperparameters
-    hypers <- tune_resampling(train, lrnr, resample)
+    params <- tune_resampling(train, lrnr, resample)
     
     #apply smote to training data
     train <- resample(train)
@@ -224,9 +220,9 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
     #learn model with new training data
     task <- TaskClassif$new("train", train, "class", positive = "1")
     if(lrnr == "rf") {
-      learner <- lrn("classif.ranger", max.depth = hypers[1,1], num.trees = hypers[1,2])
+      learner <- lrn("classif.ranger", max.depth = params[1,1], num.trees = params[1,2])
     } else if (lrnr == "knn") {
-      learner <- lrn("classif.kknn", k = hypers[1,1])
+      learner <- lrn("classif.kknn", k = params[1,1])
     }
     learner$train(task)
     

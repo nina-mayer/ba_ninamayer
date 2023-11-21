@@ -1,7 +1,6 @@
 library(mlr3)
 library(mlr3learners)
 library(mlr3measures)
-library(mlr3tuning)
 library(tidyverse)
 library(e1071)
 library(bimba)
@@ -79,6 +78,10 @@ raw$imbalance <- factor(raw$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", 
 
 raw_spect <- classify(spectf_heart, "1:3.84")
 raw_fd <- classify(fraud_detection, "1:577.9")
+
+
+
+
 
 
 
@@ -234,20 +237,80 @@ rus$imbalance <- factor(rus$imbalance, levels = c("1:4", "1:9", "1:19", "1:99", 
 rus_spect <- classify_resampling(spectf_heart, RUS, "1:3.84")
 rus_fd <- classify_resampling(fraud_detection, RUS, "1:577.9")
 
+
+
+
+
+
+
 ### HYPERPARAMETER TUNING
-detach("package:mlr3measures", unload = TRUE)
 
-### hyper_resampling_cv - function
-###
-### classifies data with 5 fold cv while applying the resampling method to the 
-### training data in each fold. The classifying learner is to be specified
-### Input:
-###   data      A dataframe. The data to be classified
-###   lrnr      A string. The learner to be trained
-###   resample  A "bimba"-method. The resampling method
-### Output:
-###   A numeric. The aggregated performance measure
-
+tune_resampling <- function(data, lrnr, resample) {
+  #3-fold-CV
+  splits <- split(data, sample(rep(1:3, times = c(2666, 2667, 2667))))
+  best <- data.frame(matrix(rep(0, times = 9), ncol = 3, nrow = 3))
+  
+  for(i in 1:3){
+    #define train and validation set for split
+    train <- data.frame()
+    trainsets <- 1:3
+    trainsets <- trainsets[!trainsets %in% c(i)]
+    for(j in trainsets){
+      train <- rbind(train, splits[[j]])
+    }
+    valid <- splits[[i]]
+    
+    
+    #learn models different hyperparameters with training data and find the best
+    if(lrnr == "rf"){
+      hypers <- data.frame(matrix(rep(0, times = 30), ncol = 3, nrow = 10))
+      maxdepth <- 1:35
+      numtrees <- 1:2000
+      #apply resampling to training data
+      train <- resample(train)
+      
+      #train models
+      for(l in 1:10){
+        hypers[l,1] <- sample(maxdepth, 1)
+        hypers[l,2] <- sample(numtrees, 1)
+        
+        #learn model with new training data
+        task <- TaskClassif$new("train", train, "class", positive = "1")
+        learner <- lrn("classif.ranger", max.depth = hypers[l,1], num.trees = hypers[l,2])
+        learner$train(task)
+        
+        #predict test data with learner
+        prediction <- learner$predict_newdata(valid)
+        hypers[l,3] <- prediction$score(msr("classif.bacc"))
+      }
+      
+      #find best model and save hyperparameters
+      best[i,] <- hypers[which.max(hypers[,3]),]
+    } else if(lrnr == "knn") {
+      hypers <- data.frame(matrix(rep(0, times = 30), ncol = 3, nrow = 10))
+      k <- 3:30
+      
+      for(l in 1:10){
+        hypers[l,1] <- sample(k, 1)
+        
+        #learn model with new training data
+        task <- TaskClassif$new("train", train, "class", positive = "1")
+        learner <- lrn("classif.kknn", k = hypers[l,1])
+        learner$train(task)
+        
+        #predict test data with learner
+        prediction <- learner$predict_newdata(valid)
+        hypers[l,3] <- prediction$score(msr("classif.bacc"))
+      }
+      
+      #find best model and save hyperparameters
+      best[i,] <- hypers[which.max(hypers[,3]),]
+    }
+    
+  }
+  #find best model from the 3 resampling procedures
+  best[which.max(best[,3]),]
+}
 
 hyper_resampling_cv <- function(data, lrnr, resample) {
   #manual 5-fold CV
@@ -263,27 +326,23 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
     }
     test <- splits[[i]]
     
+    #find best hyperparameters
+    params <- tune_resampling(train, lrnr, resample)
+    
     #apply smote to training data
     train <- resample(train)
     
-    #learn model with new training data while tuning hyperparameters
+    #learn model with new training data
     task <- TaskClassif$new("train", train, "class", positive = "1")
-    tuner <- tnr("grid_search")
-    terminator <- trm("run_time", secs = 30)
-    
-    if(lrnr == "rf"){
-      learner <- lrn("classif.ranger", max.depth = to_tune(1,35), num.trees = to_tune(1,2000))
-    } else if(lrnr == "knn") {
-      learner <- lrn("classif.kknn", k = to_tune(3,30))
+    if(lrnr == "rf") {
+      learner <- lrn("classif.ranger", max.depth = params[1,1], num.trees = params[1,2])
+    } else if (lrnr == "knn") {
+      learner <- lrn("classif.kknn", k = params[1,1])
     }
-    
-    #initialize auto-tuning
-    auto_tune <- auto_tuner(tuner = tuner, learner = learner, rsmp("cv", folds = 3), 
-                            measure = msr("classif.ce"), terminator = terminator)
-    auto_tune$train(task)
+    learner$train(task)
     
     #predict test data with learner
-    prediction <- auto_tune$predict_newdata(test)
+    prediction <- learner$predict_newdata(test)
     results[i,1] <- prediction$score(msr("classif.bacc"))
     results[i,2] <- prediction$score(msr("classif.recall"))
     results[i,3] <- prediction$score(msr("classif.fbeta"))
@@ -295,7 +354,6 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
   }
   output
 }
-
 
 ### classify_hyper_resampling - function
 ###
@@ -333,6 +391,8 @@ classify_hyper_resampling <- function(data, resample, imb) {
   output
 }
 
+
+
 ### SMOTE + Hyperparametertuning
 
 hyper_smote4 <- classify_hyper_resampling(data4, SMOTE, "1:4")
@@ -353,6 +413,8 @@ comp_hyper_smote <- comp_hyper_smote[!(comp_hyper_smote$classifier == "NB"),]
 comp_hyper_smote$hyper <- c(rep("yes", times = 10), rep("no", times = 10))
 comp_hyper_smote_rf <- comp_hyper_smote[comp_hyper_smote$classifier == "RF",]
 comp_hyper_smote_knn <- comp_hyper_smote[comp_hyper_smote$classifier == "kNN",]
+
+
 
 ### SBC + Hyperparametertuning
 
@@ -377,6 +439,8 @@ comp_hyper_sbc_knn <- comp_hyper_sbc[comp_hyper_sbc$classifier == "kNN",]
 
 
 
+
+
 ### COMPARISON 1
 
 comp1 <- data.frame(matrix(rep(0, times = 75), ncol = 3, nrow = 25))
@@ -395,7 +459,10 @@ comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS",
 
 
 
-library(mlr3measures)
+
+
+
+
 
 ### HYBRID
 
@@ -494,6 +561,9 @@ hyb_classify_resampling <- function(data, oversample, undersample, imb) {
   output
 }
 
+
+
+
 ### SMOTE + SBC
 
 smotesbc4 <- hyb_classify_resampling(data4, SMOTE, SBC, "1:4")
@@ -521,6 +591,11 @@ smoterus$imbalance <- factor(smoterus$imbalance, levels = c("1:4", "1:9", "1:19"
 
 smoterus_spect <- hyb_classify_resampling(spectf_heart, SMOTE, RUS, "1:3.84")
 smoterus_fd <- hyb_classify_resampling(spectf_heart, SMOTE, RUS, "1:3.84")
+
+
+
+
+
 
 
 
@@ -608,6 +683,9 @@ bag_classify_resampling <- function(data, method, imb) {
   output
 }
 
+
+
+
 ### SMOTE + Bagging
 
 smotebag4 <- bag_classify_resampling(data4, sbag, "1:4")
@@ -636,6 +714,10 @@ rusbag$imbalance <- factor(rusbag$imbalance, levels = c("1:4", "1:9", "1:19", "1
 
 rusbag_spect <- bag_classify_resampling(spectf_heart, ub, "1:3.84")
 rusbag_fd <- bag_classify_resampling(fraud_detection, ub, "1:577.9")
+
+
+
+
 
 
 ### COMPARISON 2
