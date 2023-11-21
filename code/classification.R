@@ -14,15 +14,14 @@ set.seed(12226947)
 
 ### classify - function
 ###
-### classifies input data according to 4 classifiers and evaluates performance
+### classifies input data according to 3 classifiers and evaluates performance
 ### with 5-fold crossvalidation and 3 performance metrics
 ### Input:
 ###   data  A dataframe. The data to be classified
 ###   imb   A string. The data imbalance
 ### Output:
-###   a list with length 5
-###     [1] a dataframe with the performance values
-###     [2]-[5] confusion matrices
+###   A dataframe with the performance values
+
 
 
 classify <- function(data, imb) {
@@ -95,10 +94,9 @@ raw_fd <- classify(fraud_detection, "1:577.9")
 ### Input:
 ###   data      A dataframe. The data to be classified
 ###   lrnr      An object of mlr3-class Learner. The learner to be trained
-###   perf      An object of mlr3-class Measure. The measure of the performance evaluation.
 ###   resample  A "bimba"-method. The resampling method
 ### Output:
-###   A numeric. The aggregated performance measure
+###   A vector of length 3. The aggregated performance measures
 
 
 resampling_cv <- function(data, lrnr, resample) {
@@ -115,7 +113,7 @@ resampling_cv <- function(data, lrnr, resample) {
     }
     test <- splits[[i]]
     
-    #apply smote to training data
+    #apply resampling method to training data
     train <- resample(train)
     
     #learn model with new training data
@@ -140,7 +138,7 @@ resampling_cv <- function(data, lrnr, resample) {
 
 ### classify_resampling - function
 ###
-### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
+### classifies a (imbalanced) data set according to 3 classifiers and evaluates 
 ### performance with 5-fold cv and 3 performance metrics while resampling the data
 ### Input:
 ###   data    A dataframe. The data to be classified
@@ -245,6 +243,19 @@ rus_fd <- classify_resampling(fraud_detection, RUS, "1:577.9")
 
 ### HYPERPARAMETER TUNING
 
+
+
+### tune_resampling - function
+###
+### finds the best hyperparameters given a resampling method and a learner while 
+### using 3.CV to validate the result
+### Input:
+###   data    A dataframe. The data to be classified
+###   resample  A "bimba"-method. The resampling method
+###   lrnr   A string. Either "rf" for Random Forest or "knn" for k-nearest neighbors
+### Output:
+###   A dataframe with 1 row and the best hyperparameters found for the model
+
 tune_resampling <- function(data, lrnr, resample) {
   #3-fold-CV
   splits <- split(data, sample(rep(1:3, times = c(2666, 2667, 2667))))
@@ -279,7 +290,7 @@ tune_resampling <- function(data, lrnr, resample) {
         learner <- lrn("classif.ranger", max.depth = hypers[l,1], num.trees = hypers[l,2])
         learner$train(task)
         
-        #predict test data with learner
+        #predict validation data with learner
         prediction <- learner$predict_newdata(valid)
         hypers[l,3] <- prediction$score(msr("classif.bacc"))
       }
@@ -298,7 +309,7 @@ tune_resampling <- function(data, lrnr, resample) {
         learner <- lrn("classif.kknn", k = hypers[l,1])
         learner$train(task)
         
-        #predict test data with learner
+        #predict validation data with learner
         prediction <- learner$predict_newdata(valid)
         hypers[l,3] <- prediction$score(msr("classif.bacc"))
       }
@@ -311,6 +322,19 @@ tune_resampling <- function(data, lrnr, resample) {
   #find best model from the 3 resampling procedures
   best[which.max(best[,3]),]
 }
+
+
+### hyper_resampling_cv - function
+###
+### classifies data with 5 fold cv while applying the resampling method to the 
+### training data in each fold. Additionally hyperparameter tuning is performed.
+### The classifying learner and the performance measure is to be specified
+### Input:
+###   data      A dataframe. The data to be classified
+###   lrnr      An object of mlr3-class Learner. The learner to be trained
+###   resample  A "bimba"-method. The resampling method
+### Output:
+###   A vector of length 3. The aggregated performance measures
 
 hyper_resampling_cv <- function(data, lrnr, resample) {
   #manual 5-fold CV
@@ -329,10 +353,10 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
     #find best hyperparameters
     params <- tune_resampling(train, lrnr, resample)
     
-    #apply smote to training data
+    #apply resampling method to training data
     train <- resample(train)
     
-    #learn model with new training data
+    #learn model with training data
     task <- TaskClassif$new("train", train, "class", positive = "1")
     if(lrnr == "rf") {
       learner <- lrn("classif.ranger", max.depth = params[1,1], num.trees = params[1,2])
@@ -357,7 +381,7 @@ hyper_resampling_cv <- function(data, lrnr, resample) {
 
 ### classify_hyper_resampling - function
 ###
-### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
+### classifies a (imbalanced) data set according to 2 classifiers and evaluates 
 ### performance with 5-fold cv and 3 performance metrics while resampling the data
 ### and performing hyperparameter tuning on each fold
 ### Input:
@@ -468,7 +492,7 @@ comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS",
 
 ### hyb_resampling_cv - function
 ###
-### classifies data with 5 fold cv while applying the resampling method to the 
+### classifies data with 5 fold cv while applying the resampling methods to the 
 ### training data in each fold. The classifying learner and the performance measure 
 ### is to be specified
 ### Input:
@@ -478,7 +502,7 @@ comp1$method <- factor(comp1$method, levels = c("No Resampling", "SMOTE", "ROS",
 ###   oversample  A "bimba"-method. The oversampling method
 ###   undersample  A "bimba"-method. The undersampling method
 ### Output:
-###   A numeric. The aggregated performance measure
+###   A vector of length 3. The aggregated performance measures
 
 hyb_resampling_cv <- function(data, lrnr, oversample, undersample) {
   #manual 5-fold CV
@@ -494,7 +518,7 @@ hyb_resampling_cv <- function(data, lrnr, oversample, undersample) {
     }
     test <- splits[[i]]
     
-    #apply smote to training data
+    #apply oversampling and undersampling to training data
     train <- oversample(train, 50)
     train <- undersample(train, 33.33)
     
@@ -520,7 +544,7 @@ hyb_resampling_cv <- function(data, lrnr, oversample, undersample) {
 
 ### hyb_classify_resampling - function
 ###
-### classifies a (imbalanced) data set according to 4 classifiers and evaluates 
+### classifies a (imbalanced) data set according to 3 classifiers and evaluates 
 ### performance with 5-fold cv and 3 performance metrics while resampling the data
 ### with one oversampling and one undersampling method
 ### Input:
@@ -605,10 +629,9 @@ smoterus_fd <- hyb_classify_resampling(spectf_heart, SMOTE, RUS, "1:3.84")
 ### bag_resampling_cv - functions
 ###
 ### classifies data with 5 fold cv while applying the hybrid method to the 
-### training data in each fold. The performance measure is to be specified.
+### training data in each fold.
 ### Input:
 ###   data      A dataframe. The data to be classified
-###   perf      An object of mlr3-class Measure. The measure of the performance evaluation.
 ###   method    A "ebmc"-method. The hybrid method
 ###   alg       A string. The algorithm for the weak learners.
 ### Output:
